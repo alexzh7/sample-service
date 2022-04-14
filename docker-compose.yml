@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+
+  db:
+    container_name: db
+    image: postgres:14-alpine
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: dvdstore
+      POSTGRES_USER: pguser
+      POSTGRES_PASSWORD: pgpass
+    volumes:
+      - ./dell-dvd-store.sql:/docker-entrypoint-initdb.d/dell-dvd-store.sql
