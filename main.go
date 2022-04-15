@@ -6,7 +6,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/alexzh7/sample-service/models"
+	"github.com/alexzh7/sample-service/repository"
 	_ "github.com/lib/pq"
 )
 
@@ -22,7 +22,7 @@ func main() {
 		l.Fatal(err)
 	}
 
-	cst := models.NewCustomerPgRepo(db)
+	cst := repository.NewCustomerPgRepo(db)
 	customers, err := cst.GetCustomers(10)
 	if err != nil {
 		l.Fatal(err)
