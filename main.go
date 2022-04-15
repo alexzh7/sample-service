@@ -22,7 +22,7 @@ func main() {
 		l.Fatal(err)
 	}
 
-	cst := models.NewCustomerPgRepo(l, db)
+	cst := models.NewCustomerPgRepo(db)
 	customers, err := cst.GetCustomers(10)
 	if err != nil {
 		l.Fatal(err)
