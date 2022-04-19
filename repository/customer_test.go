@@ -10,11 +10,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var customers = []models.Customer{
+var customers = []*models.Customer{
 	{Id: 1, FirstName: "John", LastName: "Doe", Age: 40},
 	{Id: 2, FirstName: "Tony", LastName: "Stark", Age: 33},
 	{Id: 3, FirstName: "Alex", LastName: "Zhuravlev", Age: 26},
 }
+
+var c = &models.Customer{Id: 1, FirstName: "John", LastName: "Doe", Age: 40}
 
 //Mock db connection
 func NewMock() (*sql.DB, sqlmock.Sqlmock) {
@@ -43,6 +45,36 @@ func TestGetCustomers(t *testing.T) {
 	assert.Len(t, cst, len(customers))
 
 	for k, v := range cst {
-		assert.Equal(t, v, customers[k])
+		assert.Equal(t, customers[k], v)
 	}
+}
+
+func TestGetCustomer(t *testing.T) {
+	db, mock := NewMock()
+	defer db.Close()
+
+	repo := &customerPgRepo{db}
+
+	rows := mock.NewRows([]string{"customerid", "firstname", "lastname", "age"}).
+		AddRow(c.Id, c.FirstName, c.LastName, c.Age)
+
+	mock.ExpectQuery("SELECT (.+)").WithArgs(c.Id).WillReturnRows(rows)
+
+	cst, err := repo.GetCustomer(c.Id)
+	assert.NoError(t, err)
+	assert.Equal(t, c, cst)
+}
+
+func TestGetCustomerNotFound(t *testing.T) {
+	db, mock := NewMock()
+	defer db.Close()
+
+	var id = 11
+	repo := &customerPgRepo{db}
+
+	mock.ExpectQuery("SELECT (.+)").WithArgs(id).WillReturnError(sql.ErrNoRows)
+
+	cst, err := repo.GetCustomer(id)
+	assert.ErrorIs(t, err, ErrCustomerNotFound)
+	assert.Nil(t, cst)
 }
