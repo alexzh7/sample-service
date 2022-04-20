@@ -69,6 +69,7 @@ func TestGetCustomerNotFound(t *testing.T) {
 	db, mock := NewMock()
 	defer db.Close()
 
+	//Not existing id
 	var id = 11
 	repo := &customerPgRepo{db}
 
@@ -77,4 +78,22 @@ func TestGetCustomerNotFound(t *testing.T) {
 	cst, err := repo.GetCustomer(id)
 	assert.ErrorIs(t, err, ErrCustomerNotFound)
 	assert.Nil(t, cst)
+}
+
+func TestAddCustomer(t *testing.T) {
+	db, mock := NewMock()
+	defer db.Close()
+
+	var lastInsertId int64 = 11
+	repo := &customerPgRepo{db}
+
+	prep := mock.ExpectPrepare("INSERT (.+)")
+
+	prep.ExpectExec().WithArgs(c.FirstName, c.LastName, c.Age).
+		WillReturnResult(sqlmock.NewResult(lastInsertId, 1))
+
+	id, err := repo.AddCustomer(c)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	assert.NoError(t, err)
+	assert.Equal(t, lastInsertId, id)
 }

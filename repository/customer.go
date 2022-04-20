@@ -60,51 +60,74 @@ func (c *customerPgRepo) GetCustomer(id int) (*models.Customer, error) {
 }
 
 //AddCustomer adds a customer returning id
-func (c *customerPgRepo) AddCustomer(cst models.Customer) (id int, err error) {
-	//stmt, err := db.Prepare("INSERT INTO users(name) VALUES(?)")
 
-	// INSERT INTO customers (
-	// 	firstname,
-	// 	lastname,
-	// 	address1,
-	// 	address2,
-	// 	city,
-	// 	state,
-	// 	zip,
-	// 	country,
-	// 	region,
-	// 	email,
-	// 	phone,
-	// 	creditcardtype,
-	// 	creditcard,
-	// 	creditcardexpiration,
-	// 	username,
-	// 	password,
-	// 	age,
-	// 	income,
-	// 	gender
-	//   )
-	// VALUES (
-	// 	'Test',
-	// 	'Test',
-	// 	'',
-	// 	'',
-	// 	'',
-	// 	'',
-	// 	-1,
-	// 	'',
-	// 	-1,
-	// 	'',
-	// 	'',
-	// 	-1,
-	// 	'',
-	// 	'',
-	// 	'',
-	// 	'',
-	// 	26,
-	// 	-1,
-	// 	''
-	//   );
+//TODO: add validation to check firstname, lastname, age
+func (c *customerPgRepo) AddCustomer(cst *models.Customer) (id int64, err error) {
 
-	return id, err
+	//I use only 3 columns from sample database to simplify the project logic
+	query := `
+	INSERT INTO customers (
+		firstname,
+		lastname,
+		address1,
+		address2,
+		city,
+		state,
+		zip,
+		country,
+		region,
+		email,
+		phone,
+		creditcardtype,
+		creditcard,
+		creditcardexpiration,
+		username,
+		password,
+		age,
+		income,
+		gender
+	  )
+	VALUES (
+        $1,
+		$2,
+		'',
+		'',
+		'',
+		'',
+		-1,
+		'',
+		-1,
+		'',
+		'',
+		-1,
+		'',
+		'',
+		'',
+		'',
+		$3,
+		-1,
+		''
+	  )
+	`
+	stmt, err := c.db.Prepare(query)
+	if err != nil {
+		return 0, fmt.Errorf("AddCustomer sql.Prepare: %v", err)
+	}
+
+	res, err := stmt.Exec(cst.FirstName, cst.LastName, cst.Age)
+	if err != nil {
+		return 0, fmt.Errorf("AddCustomer sql.Exec: %v", err)
+	}
+
+	id, err = res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("AddCustomer sql.LastInsertId: %v", err)
+	}
+
+	return id, nil
+}
+
+//DeleteCustomer deletes customer with provided id
+func (c *customerPgRepo) DeleteCustomer(id int) error {
+	return nil
 }
