@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"log"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -18,20 +17,11 @@ var customers = []*models.Customer{
 
 var c = &models.Customer{Id: 1, FirstName: "John", LastName: "Doe", Age: 40}
 
-//Mock db connection
-func NewMock() (*sql.DB, sqlmock.Sqlmock) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		log.Fatalf("error creating mock db: %v", err)
-	}
-	return db, mock
-}
-
 func TestGetCustomers(t *testing.T) {
 	db, mock := NewMock()
 	defer db.Close()
 
-	repo := &customerPgRepo{db}
+	repo := &pgRepo{db}
 
 	rows := mock.NewRows([]string{"customerid", "firstname", "lastname", "age"})
 	for _, v := range customers {
@@ -53,7 +43,7 @@ func TestGetCustomer(t *testing.T) {
 	db, mock := NewMock()
 	defer db.Close()
 
-	repo := &customerPgRepo{db}
+	repo := &pgRepo{db}
 
 	rows := mock.NewRows([]string{"customerid", "firstname", "lastname", "age"}).
 		AddRow(c.Id, c.FirstName, c.LastName, c.Age)
@@ -71,7 +61,7 @@ func TestGetCustomerNotFound(t *testing.T) {
 
 	//Not existing id
 	var id = 11
-	repo := &customerPgRepo{db}
+	repo := &pgRepo{db}
 
 	mock.ExpectQuery("SELECT (.+)").WithArgs(id).WillReturnError(sql.ErrNoRows)
 
@@ -85,7 +75,7 @@ func TestAddCustomer(t *testing.T) {
 	defer db.Close()
 
 	var lastInsertId int64 = 11
-	repo := &customerPgRepo{db}
+	repo := &pgRepo{db}
 
 	prep := mock.ExpectPrepare("INSERT (.+)")
 
@@ -96,4 +86,20 @@ func TestAddCustomer(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 	assert.NoError(t, err)
 	assert.Equal(t, lastInsertId, id)
+}
+
+func TestDeleteCustomer(t *testing.T) {
+	db, mock := NewMock()
+	defer db.Close()
+
+	repo := &pgRepo{db}
+
+	prep := mock.ExpectPrepare("DELETE (.+)")
+
+	prep.ExpectExec().WithArgs(c.Id).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	err := repo.DeleteCustomer(1)
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }

@@ -9,21 +9,9 @@ import (
 
 var ErrCustomerNotFound = fmt.Errorf("Customer not found")
 
-type customerPgRepo struct {
-	db *sql.DB
-}
-
-//NewCustomerPgRepo customerPgRepo constructor
-func NewCustomerPgRepo(db *sql.DB) *customerPgRepo {
-	return &customerPgRepo{db: db}
-}
-
-//TODO: Сделать интерфейс для методов, вынести работу с postges в repository/postgres?
-//		https://medium.com/easyread/unit-test-sql-in-golang-5af19075e68e
-
-//GetCustomers returns list of all customers limited by limit
-func (c *customerPgRepo) GetCustomers(limit int) ([]*models.Customer, error) {
-	rows, err := c.db.Query("SELECT customerid, firstname, lastname, age FROM customers LIMIT $1", limit)
+// GetCustomers returns list of all customers limited by limit
+func (p *pgRepo) GetCustomers(limit int) ([]*models.Customer, error) {
+	rows, err := p.db.Query("SELECT customerid, firstname, lastname, age FROM customers LIMIT $1", limit)
 	if err != nil {
 		return nil, fmt.Errorf("GetCustomers sql.Query: %v", err)
 	}
@@ -45,10 +33,10 @@ func (c *customerPgRepo) GetCustomers(limit int) ([]*models.Customer, error) {
 	return customers, nil
 }
 
-//GetCustomer returns single customer by given id and ErrCustomerNotFound if customer wasn't found
-func (c *customerPgRepo) GetCustomer(id int) (*models.Customer, error) {
+// GetCustomer returns single customer by given id and ErrCustomerNotFound if customer wasn't found
+func (p *pgRepo) GetCustomer(customerId int) (*models.Customer, error) {
 	cst := models.Customer{}
-	err := c.db.QueryRow("SELECT customerid, firstname, lastname, age FROM customers WHERE customerid=$1", id).
+	err := p.db.QueryRow("SELECT customerid, firstname, lastname, age FROM customers WHERE customerid=$1", customerId).
 		Scan(&cst.Id, &cst.FirstName, &cst.LastName, &cst.Age)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -59,12 +47,12 @@ func (c *customerPgRepo) GetCustomer(id int) (*models.Customer, error) {
 	return &cst, nil
 }
 
-//AddCustomer adds a customer returning id
+// AddCustomer adds a customer returning id
 
-//TODO: add validation to check firstname, lastname, age
-func (c *customerPgRepo) AddCustomer(cst *models.Customer) (id int64, err error) {
+// TODO: add validation to check firstname, lastname, age
+func (p *pgRepo) AddCustomer(cst *models.Customer) (id int64, err error) {
 
-	//I use only 3 columns from sample database to simplify the project logic
+	// I use only 3 columns from sample database to simplify the project logic
 	query := `
 	INSERT INTO customers (
 		firstname,
@@ -109,7 +97,7 @@ func (c *customerPgRepo) AddCustomer(cst *models.Customer) (id int64, err error)
 		''
 	  )
 	`
-	stmt, err := c.db.Prepare(query)
+	stmt, err := p.db.Prepare(query)
 	if err != nil {
 		return 0, fmt.Errorf("AddCustomer sql.Prepare: %v", err)
 	}
@@ -127,7 +115,20 @@ func (c *customerPgRepo) AddCustomer(cst *models.Customer) (id int64, err error)
 	return id, nil
 }
 
-//DeleteCustomer deletes customer with provided id
-func (c *customerPgRepo) DeleteCustomer(id int) error {
+// DeleteCustomer deletes customer with provided id
+// TODO: delete his orders?
+func (p *pgRepo) DeleteCustomer(customerId int) error {
+	query := "DELETE FROM customers WHERE customerid=$1"
+
+	stmt, err := p.db.Prepare(query)
+	if err != nil {
+		return fmt.Errorf("DeleteCustomer sql.Prepare: %v", err)
+	}
+
+	_, err = stmt.Exec(customerId)
+	if err != nil {
+		return fmt.Errorf("DeleteCustomer sql.Exec: %v", err)
+	}
+
 	return nil
 }

@@ -11,18 +11,19 @@ import (
 )
 
 func main() {
-	//Logger
+	// Logger
 	l := zap.NewExample().Sugar()
 	defer l.Sync()
 
-	//TODO: Read config from env/file
+	// TODO: Read config from env/file
+	// TODO: Fix TODOs :)
 	connStr := "user=pguser password=pgpass dbname=dvdstore sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		l.Fatal(err)
 	}
 
-	cst := repository.NewCustomerPgRepo(db)
+	cst := repository.NewPgRepo(db)
 	customers, err := cst.GetCustomers(10)
 	if err != nil {
 		l.Fatal(err)
