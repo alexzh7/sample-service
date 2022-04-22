@@ -23,14 +23,14 @@ func main() {
 		l.Fatal(err)
 	}
 
-	cst := repository.NewPgRepo(db)
-	customers, err := cst.GetCustomers(10)
-	if err != nil {
-		l.Fatal(err)
-	}
+	pgRepo := repository.NewPgRepo(db)
 
-	fmt.Println(customers)
-	for _, v := range customers {
-		fmt.Println(v.FirstName)
+	ord, err := pgRepo.GetCustomerOrders(19887)
+	for _, v := range ord {
+		fmt.Println(v.Id)
+		for _, p := range v.Products {
+			fmt.Println(p)
+		}
 	}
+	fmt.Println(err)
 }

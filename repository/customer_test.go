@@ -32,10 +32,8 @@ func TestGetCustomers(t *testing.T) {
 
 	cst, err := repo.GetCustomers(len(customers))
 	assert.NoError(t, err)
-	assert.Len(t, cst, len(customers))
-
-	for k, v := range cst {
-		assert.Equal(t, customers[k], v)
+	if !assert.ObjectsAreEqual(customers, cst) {
+		t.Error(NotEqualErr(customers, cst))
 	}
 }
 
@@ -52,7 +50,9 @@ func TestGetCustomer(t *testing.T) {
 
 	cst, err := repo.GetCustomer(c.Id)
 	assert.NoError(t, err)
-	assert.Equal(t, c, cst)
+	if !assert.ObjectsAreEqual(c, cst) {
+		t.Error(NotEqualErr(c, cst))
+	}
 }
 
 func TestGetCustomerNotFound(t *testing.T) {

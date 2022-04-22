@@ -52,52 +52,7 @@ func (p *pgRepo) GetCustomer(customerId int) (*models.Customer, error) {
 // TODO: add validation to check firstname, lastname, age
 func (p *pgRepo) AddCustomer(cst *models.Customer) (id int64, err error) {
 
-	// I use only 3 columns from sample database to simplify the project logic
-	query := `
-	INSERT INTO customers (
-		firstname,
-		lastname,
-		address1,
-		address2,
-		city,
-		state,
-		zip,
-		country,
-		region,
-		email,
-		phone,
-		creditcardtype,
-		creditcard,
-		creditcardexpiration,
-		username,
-		password,
-		age,
-		income,
-		gender
-	  )
-	VALUES (
-        $1,
-		$2,
-		'',
-		'',
-		'',
-		'',
-		-1,
-		'',
-		-1,
-		'',
-		'',
-		-1,
-		'',
-		'',
-		'',
-		'',
-		$3,
-		-1,
-		''
-	  )
-	`
-	stmt, err := p.db.Prepare(query)
+	stmt, err := p.db.Prepare(addCustomerQuery)
 	if err != nil {
 		return 0, fmt.Errorf("AddCustomer sql.Prepare: %v", err)
 	}
@@ -132,3 +87,50 @@ func (p *pgRepo) DeleteCustomer(customerId int) error {
 
 	return nil
 }
+
+// I use only 3 columns from sample database to simplify the project logic
+const addCustomerQuery = `
+		INSERT INTO customers (
+			firstname,
+			lastname,
+			address1,
+			address2,
+			city,
+			state,
+			zip,
+			country,
+			region,
+			email,
+			phone,
+			creditcardtype,
+			creditcard,
+			creditcardexpiration,
+			username,
+			password,
+			age,
+			income,
+			gender
+		)
+		VALUES (
+			$1,
+			$2,
+			'',
+			'',
+			'',
+			'',
+			'',
+			-1,
+			'',
+			-1,
+			'',
+			'',
+			-1,
+			'',
+			'',
+			'',
+			'',
+			$3,
+			-1,
+			''
+		)
+		`

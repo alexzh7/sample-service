@@ -33,10 +33,8 @@ func TestGetProducts(t *testing.T) {
 
 	prods, err := repo.GetProducts(len(products))
 	assert.NoError(t, err)
-	assert.Len(t, prods, len(products))
-
-	for k, v := range prods {
-		assert.Equal(t, products[k], v)
+	if !assert.ObjectsAreEqual(products, prods) {
+		t.Error(NotEqualErr(products, prods))
 	}
 }
 
@@ -53,7 +51,9 @@ func TestGetProduct(t *testing.T) {
 
 	prod, err := repo.GetProduct(p.Id)
 	assert.NoError(t, err)
-	assert.Equal(t, p, prod)
+	if !assert.ObjectsAreEqual(p, prod) {
+		t.Error(NotEqualErr(p, prod))
+	}
 }
 
 func TestGetProductNotFound(t *testing.T) {
