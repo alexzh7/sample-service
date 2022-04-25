@@ -10,15 +10,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var products = []*models.Product{
-	{Id: 1, Title: "Interstellar", Price: 80.00, Quantity: 60},
-	{Id: 2, Title: "John Wick", Price: 100.00, Quantity: 230},
-	{Id: 3, Title: "Inception", Price: 120.00, Quantity: 400},
-}
+// Sample product
+var prod = &models.Product{Id: 1, Title: "Interstellar", Price: 80.00, Quantity: 60}
 
-var p = &models.Product{Id: 1, Title: "Interstellar", Price: 80.00, Quantity: 60}
-
-func TestGetProducts(t *testing.T) {
+func TestGetAllProducts(t *testing.T) {
+	products := []*models.Product{
+		{Id: 1, Title: "Interstellar", Price: 80.00, Quantity: 60},
+		{Id: 2, Title: "John Wick", Price: 100.00, Quantity: 230},
+		{Id: 3, Title: "Inception", Price: 120.00, Quantity: 400},
+	}
 	db, mock := NewMock()
 	defer db.Close()
 
@@ -31,7 +31,7 @@ func TestGetProducts(t *testing.T) {
 
 	mock.ExpectQuery("SELECT (.+)").WillReturnRows(rows)
 
-	prods, err := repo.GetProducts(len(products))
+	prods, err := repo.GetAllProducts(len(products))
 	assert.NoError(t, err)
 	if !assert.ObjectsAreEqual(products, prods) {
 		t.Error(NotEqualErr(products, prods))
@@ -45,14 +45,14 @@ func TestGetProduct(t *testing.T) {
 	repo := &pgRepo{db}
 
 	rows := mock.NewRows([]string{"prod_id", "title", "price", "quan_in_stock"}).
-		AddRow(p.Id, p.Title, p.Price, p.Quantity)
+		AddRow(prod.Id, prod.Title, prod.Price, prod.Quantity)
 
-	mock.ExpectQuery("SELECT (.+)").WithArgs(p.Id).WillReturnRows(rows)
+	mock.ExpectQuery("SELECT (.+)").WithArgs(prod.Id).WillReturnRows(rows)
 
-	prod, err := repo.GetProduct(p.Id)
+	pr, err := repo.GetProduct(prod.Id)
 	assert.NoError(t, err)
-	if !assert.ObjectsAreEqual(p, prod) {
-		t.Error(NotEqualErr(p, prod))
+	if !assert.ObjectsAreEqual(prod, pr) {
+		t.Error(NotEqualErr(prod, pr))
 	}
 }
 
@@ -66,9 +66,9 @@ func TestGetProductNotFound(t *testing.T) {
 
 	mock.ExpectQuery("SELECT (.+)").WithArgs(id).WillReturnError(sql.ErrNoRows)
 
-	prod, err := repo.GetProduct(id)
+	pr, err := repo.GetProduct(id)
 	assert.ErrorIs(t, err, ErrProductNotFound)
-	assert.Nil(t, prod)
+	assert.Nil(t, pr)
 }
 
 func TestAddProduct(t *testing.T) {
@@ -79,14 +79,14 @@ func TestAddProduct(t *testing.T) {
 	repo := &pgRepo{db}
 
 	mock.ExpectBegin()
-	mock.ExpectExec("INSERT INTO products (.+)").WithArgs(p.Title, p.Price).
+	mock.ExpectExec("INSERT INTO products (.+)").WithArgs(prod.Title, prod.Price).
 		WillReturnResult(sqlmock.NewResult(lastInsertId, 1))
 
-	mock.ExpectExec("INSERT INTO inventory (.+)").WithArgs(lastInsertId, p.Quantity).
+	mock.ExpectExec("INSERT INTO inventory (.+)").WithArgs(lastInsertId, prod.Quantity).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
-	id, err := repo.AddProduct(p)
+	id, err := repo.AddProduct(prod)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	assert.NoError(t, err)
 	assert.Equal(t, lastInsertId, id)
@@ -100,14 +100,14 @@ func TestAddProductRollback(t *testing.T) {
 	repo := &pgRepo{db}
 
 	mock.ExpectBegin()
-	mock.ExpectExec("INSERT INTO products (.+)").WithArgs(p.Title, p.Price).
+	mock.ExpectExec("INSERT INTO products (.+)").WithArgs(prod.Title, prod.Price).
 		WillReturnResult(sqlmock.NewResult(lastInsertId, 1))
 
-	mock.ExpectExec("INSERT INTO inventory (.+)").WithArgs(lastInsertId, p.Quantity).
+	mock.ExpectExec("INSERT INTO inventory (.+)").WithArgs(lastInsertId, prod.Quantity).
 		WillReturnError(fmt.Errorf("rollback"))
 	mock.ExpectRollback()
 
-	_, err := repo.AddProduct(p)
+	_, err := repo.AddProduct(prod)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	assert.Error(t, err)
 }
@@ -119,14 +119,14 @@ func TestDeleteProduct(t *testing.T) {
 	repo := &pgRepo{db}
 
 	mock.ExpectBegin()
-	mock.ExpectExec("DELETE FROM inventory (.+)").WithArgs(p.Id).
+	mock.ExpectExec("DELETE FROM inventory (.+)").WithArgs(prod.Id).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-	mock.ExpectExec("DELETE FROM products (.+)").WithArgs(p.Id).
+	mock.ExpectExec("DELETE FROM products (.+)").WithArgs(prod.Id).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
-	err := repo.DeleteProduct(p.Id)
+	err := repo.DeleteProduct(prod.Id)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	assert.NoError(t, err)
 }
@@ -138,14 +138,14 @@ func TestDeleteProductRollback(t *testing.T) {
 	repo := &pgRepo{db}
 
 	mock.ExpectBegin()
-	mock.ExpectExec("DELETE FROM inventory (.+)").WithArgs(p.Id).
+	mock.ExpectExec("DELETE FROM inventory (.+)").WithArgs(prod.Id).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-	mock.ExpectExec("DELETE FROM products (.+)").WithArgs(p.Id).
+	mock.ExpectExec("DELETE FROM products (.+)").WithArgs(prod.Id).
 		WillReturnError(fmt.Errorf("rollback"))
 	mock.ExpectRollback()
 
-	err := repo.DeleteProduct(p.Id)
+	err := repo.DeleteProduct(prod.Id)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	assert.Error(t, err)
 }

@@ -9,8 +9,8 @@ import (
 
 var ErrCustomerNotFound = fmt.Errorf("Customer not found")
 
-// GetCustomers returns list of all customers limited by limit
-func (p *pgRepo) GetCustomers(limit int) ([]*models.Customer, error) {
+// GetAllCustomers returns list of all customers limited by limit
+func (p *pgRepo) GetAllCustomers(limit int) ([]*models.Customer, error) {
 	rows, err := p.db.Query("SELECT customerid, firstname, lastname, age FROM customers LIMIT $1", limit)
 	if err != nil {
 		return nil, fmt.Errorf("GetCustomers sql.Query: %v", err)

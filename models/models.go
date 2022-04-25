@@ -28,3 +28,10 @@ type Product struct {
 	Price    float64 `json:"price,omitempty"`
 	Quantity int     `json:"quantity,omitempty"`
 }
+
+// SortById implements sort.Interface and is used to sort slice of products by id
+type SortById []*Product
+
+func (a SortById) Len() int           { return len(a) }
+func (a SortById) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a SortById) Less(i, j int) bool { return a[i].Id < a[j].Id }

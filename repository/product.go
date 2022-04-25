@@ -9,8 +9,8 @@ import (
 
 var ErrProductNotFound = fmt.Errorf("Product not found")
 
-// GetProducts returns list of all products limited by limit
-func (p *pgRepo) GetProducts(limit int) ([]*models.Product, error) {
+// GetAllProducts returns list of all products limited by limit
+func (p *pgRepo) GetAllProducts(limit int) ([]*models.Product, error) {
 	query := `
 	SELECT p.prod_id, p.title, p.price, i.quan_in_stock 
 	FROM products p INNER JOIN inventory i

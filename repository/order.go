@@ -2,11 +2,15 @@ package repository
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/alexzh7/sample-service/models"
+	"github.com/lib/pq"
 )
 
+// TODO: add errors with product id, order id, etc...
 var ErrOrderNotFound = fmt.Errorf("Order not found")
+var ErrOutOfInventory = fmt.Errorf("Product out of inventory")
 
 // GetOrder gets order by order id. Returns ErrOrderNotFound if order was not found
 func (p *pgRepo) GetOrder(orderId int) (*models.Order, error) {
@@ -102,9 +106,97 @@ func (p *pgRepo) GetCustomerOrders(customerId int) ([]*models.Order, error) {
 	return orders, nil
 }
 
-// AddOrder creates order returning id
-func (p *pgRepo) AddOrder(order *models.Order) (orderId int, err error) {
-	return 0, nil
+// AddOrder creates order for customerId with provided products.
+// Passed products must have id and quantity fields filled.
+// Returns order and errors: ErrOutOfInventory if product is out of inventory,
+// ErrProductNotFound if product was not found
+// TODO: Add validation on product.Id, product.Quantity > 0
+func (p *pgRepo) AddOrder(customerId int, products []*models.Product) (*models.Order, error) {
+	// Retrieve product ids from struct, count amounts
+	// var tax float64 = 10.00
+	var netAmount float64
+	productIds := make([]int, 0)
+
+	for _, v := range products {
+		netAmount += v.Price
+		// totalAmount = netAmount + netAmount/tax
+		productIds = append(productIds, v.Id)
+	}
+
+	query := `
+	SELECT i.prod_id, i.quan_in_stock, p.price
+	FROM inventory i INNER JOIN products p
+	ON i.prod_id = p.prod_id
+	WHERE prod_id = ANY($1)`
+
+	tx, err := p.db.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("AddOrder tx.Begin: %v", err)
+	}
+	defer tx.Rollback()
+
+	// Check products existence and their quantity in stock
+	rows, err := tx.Query(query, pq.Array(productIds))
+	if err != nil {
+		return nil, fmt.Errorf("AddOrder tx.Query: %v", err)
+	}
+	defer rows.Close()
+
+	prodsInStock := make([]*models.Product, 0)
+
+	for rows.Next() {
+		prod := models.Product{}
+		if err = rows.Scan(&prod.Id, &prod.Quantity, &prod.Price); err != nil {
+			return nil, fmt.Errorf("AddOrder select inventory rows.Scan: %v", err)
+		}
+		prodsInStock = append(prodsInStock, &prod)
+	}
+
+	// Check existence
+	if len(products) != len(prodsInStock) {
+		return nil, ErrProductNotFound
+	}
+	// Check quantity
+	sort.Sort(models.SortById(products))
+	for i, p := range products {
+		if p.Quantity > prodsInStock[i].Quantity {
+			return nil, ErrOutOfInventory
+		}
+	}
+
+	// Update quantity
+	// TODO: optimize for one query
+	stmt, err := tx.Prepare("UPDATE inventory SET quan_in_stock = quan_in_stock - $1 WHERE prod_id = $2")
+	if err != nil {
+		return nil, fmt.Errorf("AddOrder inventory tx.Prepare: %v", err)
+	}
+	defer stmt.Close()
+	for _, v := range products {
+		if _, err := stmt.Exec(v.Quantity, v.Id); err != nil {
+			return nil, fmt.Errorf("AddOrder update inventory tx.Exec: %v", err)
+		}
+	}
+
+	// order := &models.Order{
+	// 	Date: time.Now().UTC(),
+	// }
+	// Взять цену у каждого продукта и умножить на кол-во
+	// Сложить цены - netamount
+	// Посчитать налог - tax, записать сумму в totalamount
+	// INSERT
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("AddOrder tx.Commit: %v", err)
+	}
+
+	return nil, nil
 }
 
-// DeleteOrder
+// DeleteOrder deletes order by given order id
+func (p *pgRepo) DeleteOrder(orderId int) error {
+
+	// TX that checks quantity for products, returns ErrOutOfInventory if err
+	// Then adds order, returns id
+
+	return nil
+}
