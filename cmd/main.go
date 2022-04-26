@@ -6,7 +6,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/alexzh7/sample-service/internal/dvdstore/repository"
+	repo "github.com/alexzh7/sample-service/internal/dvdstore/repository/postgres"
 	"github.com/alexzh7/sample-service/internal/models"
 	_ "github.com/lib/pq"
 )
@@ -24,7 +24,7 @@ func main() {
 		l.Fatal(err)
 	}
 
-	pgRepo := repository.NewPgRepo(db)
+	pgRepo := repo.NewPgRepo(db)
 
 	prods := []*models.Product{
 		{Id: 100, Quantity: 1},

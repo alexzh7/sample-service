@@ -45,7 +45,6 @@ func (p *pgRepo) GetCustomer(customerId int) (*models.Customer, error) {
 }
 
 // AddCustomer adds a customer returning id
-// TODO: add validation to check firstname, lastname, age
 func (p *pgRepo) AddCustomer(cst *models.Customer) (id int, err error) {
 	if err = p.db.QueryRow(addCustomerQuery, cst.FirstName, cst.LastName, cst.Age).
 		Scan(&id); err != nil {

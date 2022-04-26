@@ -7,7 +7,7 @@ import (
 	"github.com/alexzh7/sample-service/internal/models"
 )
 
-// GetAllProducts returns list of all products limited by limit
+// GetAllProducts returns slice of all products limited by limit
 func (p *pgRepo) GetAllProducts(limit int) ([]*models.Product, error) {
 	query := `
 	SELECT p.prod_id, p.title, p.price, i.quan_in_stock 
@@ -59,7 +59,6 @@ func (p *pgRepo) GetProduct(productId int) (*models.Product, error) {
 }
 
 // AddProduct adds a product returning id
-// TODO: add validation
 func (p *pgRepo) AddProduct(prod *models.Product) (productId int, err error) {
 	// Helper func
 	fail := func(errSring string, err error) (int, error) {
