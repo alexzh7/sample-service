@@ -5,13 +5,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/alexzh7/sample-service/models"
+	"github.com/alexzh7/sample-service/internal/models"
 	"github.com/lib/pq"
 )
-
-// TODO: add errors with product id, order id, etc...
-var ErrOrderNotFound = fmt.Errorf("Order not found")
-var ErrOutOfInventory = fmt.Errorf("Product out of inventory")
 
 // GetOrder gets order by order id. Returns ErrOrderNotFound if order was not found
 func (p *pgRepo) GetOrder(orderId int) (*models.Order, error) {
@@ -112,14 +108,18 @@ func (p *pgRepo) GetCustomerOrders(customerId int) ([]*models.Order, error) {
 // ErrProductNotFound if product was not found
 // TODO: Add validation on product.Id, product.Quantity > 0
 func (p *pgRepo) AddOrder(customerId int, products []*models.Product) (*models.Order, error) {
-	var tax, net, total float64
-	// Retrieve product ids for query
-	productIds := make([]int, 0)
-	for _, v := range products {
-		productIds = append(productIds, v.Id)
+	// Helper func
+	fail := func(errString string, err error) (*models.Order, error) {
+		return nil, fmt.Errorf("AddOrder "+errString+": %v ", err)
 	}
 
-	query := `
+	// Retrieve product ids for query
+	productIds := make([]int, 0)
+	for _, p := range products {
+		productIds = append(productIds, p.Id)
+	}
+
+	selectQuery := `
 	SELECT i.prod_id, i.quan_in_stock, p.price, p.title
 	FROM inventory i INNER JOIN products p
 	ON i.prod_id = p.prod_id
@@ -127,14 +127,14 @@ func (p *pgRepo) AddOrder(customerId int, products []*models.Product) (*models.O
 
 	tx, err := p.db.Begin()
 	if err != nil {
-		return nil, fmt.Errorf("AddOrder tx.Begin: %v", err)
+		return fail("tx.Begin", err)
 	}
 	defer tx.Rollback()
 
 	// Check products existence and their quantity in stock
-	rows, err := tx.Query(query, pq.Array(productIds))
+	rows, err := tx.Query(selectQuery, pq.Array(productIds))
 	if err != nil {
-		return nil, fmt.Errorf("AddOrder SELECT tx.Query: %v", err)
+		return fail("SELECT tx.Query", err)
 	}
 	defer rows.Close()
 
@@ -142,7 +142,7 @@ func (p *pgRepo) AddOrder(customerId int, products []*models.Product) (*models.O
 	for rows.Next() {
 		prod := models.Product{}
 		if err = rows.Scan(&prod.Id, &prod.Quantity, &prod.Price, &prod.Title); err != nil {
-			return nil, fmt.Errorf("AddOrder SELECT inventory rows.Scan: %v", err)
+			return fail("SELECT inventory rows.Scan", err)
 		}
 		prodsInStock = append(prodsInStock, &prod)
 	}
@@ -152,10 +152,11 @@ func (p *pgRepo) AddOrder(customerId int, products []*models.Product) (*models.O
 		return nil, ErrProductNotFound
 	}
 	// Check quantity, add products info
+	var tax, net, total float64
 	sort.Sort(models.SortById(products))
 	for i, p := range products {
 		if p.Quantity > prodsInStock[i].Quantity {
-			return nil, ErrOutOfInventory
+			return nil, ErrProductOutOfInventory
 		}
 		p.Price = prodsInStock[i].Price
 		p.Title = prodsInStock[i].Title
@@ -168,19 +169,20 @@ func (p *pgRepo) AddOrder(customerId int, products []*models.Product) (*models.O
 	// TODO: optimize for one query
 	stmt, err := tx.Prepare("UPDATE inventory SET quan_in_stock = quan_in_stock - $1 WHERE prod_id = $2")
 	if err != nil {
-		return nil, fmt.Errorf("AddOrder UPDATE inventory tx.Prepare: %v", err)
+		return fail("UPDATE inventory tx.Prepare", err)
 	}
 	defer stmt.Close()
-	for _, v := range products {
-		if _, err := stmt.Exec(v.Quantity, v.Id); err != nil {
-			return nil, fmt.Errorf("AddOrder UPDATE inventory tx.Exec: %v", err)
+	for _, p := range products {
+		if _, err := stmt.Exec(p.Quantity, p.Id); err != nil {
+			return fail("UPDATE inventory tx.Exec", err)
 		}
 	}
 
 	// Insert order
 	insertQuery := `
 	INSERT INTO orders (orderdate, customerid, netamount, tax, totalamount) 
-	VALUES ($1, $2, $3, $4, $5); 
+	VALUES ($1, $2, $3, $4, $5)
+	RETURNING orderid
 	`
 	ord := &models.Order{
 		Date:        time.Now().UTC(),
@@ -189,16 +191,13 @@ func (p *pgRepo) AddOrder(customerId int, products []*models.Product) (*models.O
 		TotalAmount: total,
 		Products:    products,
 	}
-
-	_, err = tx.Exec(insertQuery, ord.Date, customerId, ord.NetAmount, ord.Tax, ord.TotalAmount)
-	if err != nil {
-		return nil, fmt.Errorf("AddOrder INSERT tx.Exec: %v", err)
+	if err = tx.QueryRow(insertQuery, ord.Date, customerId, ord.NetAmount, ord.Tax, ord.TotalAmount).
+		Scan(&ord.Id); err != nil {
+		return fail("INSERT orders tx.QueryRow", err)
 	}
 
-	// LastInsertId
-
 	if err = tx.Commit(); err != nil {
-		return nil, fmt.Errorf("AddOrder tx.Commit: %v", err)
+		return fail("INSERT orders tx.Commit", err)
 	}
 
 	return ord, nil
@@ -206,9 +205,9 @@ func (p *pgRepo) AddOrder(customerId int, products []*models.Product) (*models.O
 
 // DeleteOrder deletes order by given order id
 func (p *pgRepo) DeleteOrder(orderId int) error {
-
-	// TX that checks quantity for products, returns ErrOutOfInventory if err
-	// Then adds order, returns id
-
+	_, err := p.db.Exec("DELETE FROM orders WHERE orderid=$1", orderId)
+	if err != nil {
+		return fmt.Errorf("DeleteOrder sql.Exec: %v", err)
+	}
 	return nil
 }

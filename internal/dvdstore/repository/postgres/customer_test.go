@@ -5,12 +5,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/alexzh7/sample-service/models"
+	"github.com/alexzh7/sample-service/internal/models"
 	"github.com/stretchr/testify/assert"
 )
-
-// Sample customer
-var cust = &models.Customer{Id: 1, FirstName: "John", LastName: "Doe", Age: 40}
 
 func TestGetAllCustomers(t *testing.T) {
 	customers := []*models.Customer{
@@ -21,15 +18,13 @@ func TestGetAllCustomers(t *testing.T) {
 	db, mock := NewMock()
 	defer db.Close()
 
-	repo := &pgRepo{db}
-
 	rows := mock.NewRows([]string{"customerid", "firstname", "lastname", "age"})
 	for _, v := range customers {
 		rows.AddRow(v.Id, v.FirstName, v.LastName, v.Age)
 	}
-
 	mock.ExpectQuery("SELECT (.+)").WillReturnRows(rows)
 
+	repo := &pgRepo{db}
 	cst, err := repo.GetAllCustomers(len(customers))
 	assert.NoError(t, err)
 	if !assert.ObjectsAreEqual(customers, cst) {
@@ -41,17 +36,15 @@ func TestGetCustomer(t *testing.T) {
 	db, mock := NewMock()
 	defer db.Close()
 
-	repo := &pgRepo{db}
-
 	rows := mock.NewRows([]string{"customerid", "firstname", "lastname", "age"}).
-		AddRow(cust.Id, cust.FirstName, cust.LastName, cust.Age)
+		AddRow(mockCustomer.Id, mockCustomer.FirstName, mockCustomer.LastName, mockCustomer.Age)
+	mock.ExpectQuery("SELECT (.+)").WithArgs(mockCustomer.Id).WillReturnRows(rows)
 
-	mock.ExpectQuery("SELECT (.+)").WithArgs(cust.Id).WillReturnRows(rows)
-
-	cst, err := repo.GetCustomer(cust.Id)
+	repo := &pgRepo{db}
+	cst, err := repo.GetCustomer(mockCustomer.Id)
 	assert.NoError(t, err)
-	if !assert.ObjectsAreEqual(cust, cst) {
-		t.Error(NotEqualErr(cust, cst))
+	if !assert.ObjectsAreEqual(mockCustomer, cst) {
+		t.Error(NotEqualErr(mockCustomer, cst))
 	}
 }
 
@@ -59,12 +52,10 @@ func TestGetCustomerNotFound(t *testing.T) {
 	db, mock := NewMock()
 	defer db.Close()
 
-	//Not existing id
 	var id = 11
-	repo := &pgRepo{db}
-
 	mock.ExpectQuery("SELECT (.+)").WithArgs(id).WillReturnError(sql.ErrNoRows)
 
+	repo := &pgRepo{db}
 	cst, err := repo.GetCustomer(id)
 	assert.ErrorIs(t, err, ErrCustomerNotFound)
 	assert.Nil(t, cst)
@@ -74,15 +65,13 @@ func TestAddCustomer(t *testing.T) {
 	db, mock := NewMock()
 	defer db.Close()
 
-	var lastInsertId int64 = 11
+	var lastInsertId = 11
+	rows := mock.NewRows([]string{"customerid"}).AddRow(lastInsertId)
+	mock.ExpectQuery("INSERT (.+)").WithArgs(mockCustomer.FirstName, mockCustomer.LastName, mockCustomer.Age).
+		WillReturnRows(rows)
+
 	repo := &pgRepo{db}
-
-	prep := mock.ExpectPrepare("INSERT (.+)")
-
-	prep.ExpectExec().WithArgs(cust.FirstName, cust.LastName, cust.Age).
-		WillReturnResult(sqlmock.NewResult(lastInsertId, 1))
-
-	id, err := repo.AddCustomer(cust)
+	id, err := repo.AddCustomer(mockCustomer)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	assert.NoError(t, err)
 	assert.Equal(t, lastInsertId, id)
@@ -92,14 +81,11 @@ func TestDeleteCustomer(t *testing.T) {
 	db, mock := NewMock()
 	defer db.Close()
 
-	repo := &pgRepo{db}
-
-	prep := mock.ExpectPrepare("DELETE (.+)")
-
-	prep.ExpectExec().WithArgs(cust.Id).
+	mock.ExpectExec("DELETE (.+)").WithArgs(mockCustomer.Id).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-	err := repo.DeleteCustomer(1)
+	repo := &pgRepo{db}
+	err := repo.DeleteCustomer(mockCustomer.Id)
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

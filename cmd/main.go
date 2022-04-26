@@ -6,8 +6,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/alexzh7/sample-service/models"
-	"github.com/alexzh7/sample-service/repository"
+	"github.com/alexzh7/sample-service/internal/dvdstore/repository"
+	"github.com/alexzh7/sample-service/internal/models"
 	_ "github.com/lib/pq"
 )
 
@@ -27,9 +27,11 @@ func main() {
 	pgRepo := repository.NewPgRepo(db)
 
 	prods := []*models.Product{
-		{Id: 100, Quantity: 10},
+		{Id: 100, Quantity: 1},
+		{Id: 5, Quantity: 3},
+		{Id: 46, Quantity: 2},
 	}
-	ord, err := pgRepo.AddOrder(13, prods)
+	ord, err := pgRepo.AddOrder(16, prods)
 
 	if err == nil {
 		fmt.Println(ord)
@@ -37,7 +39,5 @@ func main() {
 			fmt.Println(v)
 		}
 	}
-
-	// TODO: LastInsertId is not supported by this driver
 
 }
