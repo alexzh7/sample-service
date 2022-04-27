@@ -53,7 +53,8 @@ func TestGetProductNotFound(t *testing.T) {
 
 	repo := &pgRepo{db}
 	pr, err := repo.GetProduct(id)
-	assert.ErrorIs(t, err, models.ErrProductNotFound)
+	var entErr *models.EntityError
+	assert.ErrorAs(t, err, &entErr)
 	assert.Nil(t, pr)
 }
 

@@ -48,7 +48,8 @@ func TestGetOrderNotFound(t *testing.T) {
 
 	repo := &pgRepo{db}
 	order, err := repo.GetOrder(10)
-	assert.ErrorIs(t, err, models.ErrOrderNotFound)
+	var e *models.EntityError
+	assert.ErrorAs(t, err, &e)
 	assert.Nil(t, order)
 }
 
@@ -108,7 +109,8 @@ func TestGetCustomerOrdersNotFound(t *testing.T) {
 
 	repo := &pgRepo{db}
 	order, err := repo.GetCustomerOrders(10)
-	assert.ErrorIs(t, err, models.ErrOrderNotFound)
+	var e *models.EntityError
+	assert.ErrorAs(t, err, &e)
 	assert.Nil(t, order)
 }
 
@@ -189,7 +191,8 @@ func TestAddOrderProductNotFound(t *testing.T) {
 	repo := &pgRepo{db}
 	order, err := repo.AddOrder(customerId, mockProducts)
 	assert.Nil(t, order)
-	assert.ErrorIs(t, err, models.ErrProductNotFound)
+	var entErr *models.EntityError
+	assert.ErrorAs(t, err, &entErr)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -215,7 +218,8 @@ func TestAddOrderOutOfInventory(t *testing.T) {
 	repo := &pgRepo{db}
 	order, err := repo.AddOrder(customerId, mockProducts)
 	assert.Nil(t, order)
-	assert.ErrorIs(t, err, models.ErrProductOutOfInventory)
+	var entErr *models.EntityError
+	assert.ErrorAs(t, err, &entErr)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

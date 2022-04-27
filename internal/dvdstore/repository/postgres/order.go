@@ -9,7 +9,7 @@ import (
 	"github.com/lib/pq"
 )
 
-// GetOrder gets order by order id. Returns ErrOrderNotFound if order was not found
+// GetOrder gets order by order id. Returns EntityError if order was not found
 func (p *pgRepo) GetOrder(orderId int) (*models.Order, error) {
 	query := `
 	SELECT t.orderid, t.orderdate, t.netamount, t.tax, t.totalamount,
@@ -45,7 +45,7 @@ func (p *pgRepo) GetOrder(orderId int) (*models.Order, error) {
 	}
 
 	if len(products) == 0 {
-		return nil, models.ErrOrderNotFound
+		return nil, models.ErrNotFound("order", orderId)
 	}
 
 	ord.Products = products
@@ -53,7 +53,7 @@ func (p *pgRepo) GetOrder(orderId int) (*models.Order, error) {
 	return &ord, nil
 }
 
-// GetCustomerOrders gets orders for provided customer id. Returns ErrOrderNotFound if order was not found
+// GetCustomerOrders gets orders for provided customer id. Returns EntityError if order was not found
 func (p *pgRepo) GetCustomerOrders(customerId int) ([]*models.Order, error) {
 	query := `
 	SELECT t.orderid, t.orderdate, t.netamount, t.tax, t.totalamount,
@@ -97,16 +97,15 @@ func (p *pgRepo) GetCustomerOrders(customerId int) ([]*models.Order, error) {
 	}
 
 	if len(orders) == 0 {
-		return nil, models.ErrOrderNotFound
+		return nil, models.ErrNotFound("orders for customer", customerId)
 	}
 
 	return orders, nil
 }
 
 // AddOrder creates order for customerId with provided products. Passed products must have id and
-// quantity fields filled. Returns order and errors: ErrOutOfInventory if product is out of inventory,
-// ErrProductNotFound if product was not found
-// TODO: Add validation on product.Id, product.Quantity > 0
+// quantity fields filled. Returns order and EntityError if product/customer was not found or product
+// is out of inventory
 func (p *pgRepo) AddOrder(customerId int, products []*models.Product) (*models.Order, error) {
 	// Helper func
 	fail := func(errString string, err error) (*models.Order, error) {
@@ -149,14 +148,16 @@ func (p *pgRepo) AddOrder(customerId int, products []*models.Product) (*models.O
 
 	// Check existence
 	if len(products) != len(prodsInStock) {
-		return nil, models.ErrProductNotFound
+		return nil, &models.EntityError{
+			Message: "some of the provided products not found",
+		}
 	}
 	// Check quantity, add products info
 	var tax, net, total float64
 	sort.Sort(models.SortById(products))
 	for i, p := range products {
 		if p.Quantity > prodsInStock[i].Quantity {
-			return nil, models.ErrProductOutOfInventory
+			return nil, models.ErrOutOfInventory("product", i)
 		}
 		p.Price = prodsInStock[i].Price
 		p.Title = prodsInStock[i].Title

@@ -43,7 +43,7 @@ func (d *dvdstoreUC) GetCustomers(limit int) ([]*models.Customer, error) {
 	return customers, nil
 }
 
-// GetCustomer returns customer by given id, ErrCustomerNotFound if customer wasn't found
+// GetCustomer returns customer by given id, EntityError if customer wasn't found
 // and ErrGeneralDBFail if db returned db-specific error
 func (d *dvdstoreUC) GetCustomer(customerId int) (*models.Customer, error) {
 	if err := validateVar(customerId, "customerId"); err != nil {
@@ -53,7 +53,7 @@ func (d *dvdstoreUC) GetCustomer(customerId int) (*models.Customer, error) {
 
 	customer, err := d.pg.GetCustomer(customerId)
 	if err != nil {
-		if err == models.ErrCustomerNotFound {
+		if _, ok := err.(*models.EntityError); ok {
 			return nil, err
 		}
 		d.log.Error(err)
@@ -114,7 +114,7 @@ func (d *dvdstoreUC) GetProducts(limit int) ([]*models.Product, error) {
 	return products, nil
 }
 
-// GetProduct returns product by given id, ErrProductNotFound if product wasn't found
+// GetProduct returns product by given id, EntityError if product wasn't found
 // and ErrGeneralDBFail if db returned db-specific error
 func (d *dvdstoreUC) GetProduct(productId int) (*models.Product, error) {
 	if err := validateVar(productId, "productId"); err != nil {
@@ -124,7 +124,7 @@ func (d *dvdstoreUC) GetProduct(productId int) (*models.Product, error) {
 
 	product, err := d.pg.GetProduct(productId)
 	if err != nil {
-		if err == models.ErrProductNotFound {
+		if _, ok := err.(*models.EntityError); ok {
 			return nil, err
 		}
 		d.log.Error(err)
@@ -167,7 +167,7 @@ func (d *dvdstoreUC) DeleteProduct(productId int) error {
 	return nil
 }
 
-// GetOrder gets order by order id. Returns ErrOrderNotFound if order was not found
+// GetOrder gets order by order id. Returns EntityError if order was not found
 // and ErrGeneralDBFail if db returned db-specific error
 func (d *dvdstoreUC) GetOrder(orderId int) (*models.Order, error) {
 	if err := validateVar(orderId, "orderId"); err != nil {
@@ -177,7 +177,7 @@ func (d *dvdstoreUC) GetOrder(orderId int) (*models.Order, error) {
 
 	order, err := d.pg.GetOrder(orderId)
 	if err != nil {
-		if err == models.ErrOrderNotFound {
+		if _, ok := err.(*models.EntityError); ok {
 			return nil, err
 		}
 		d.log.Error(err)
@@ -187,9 +187,8 @@ func (d *dvdstoreUC) GetOrder(orderId int) (*models.Order, error) {
 	return order, nil
 }
 
-// GetCustomerOrders gets orders for provided customer id. Returns ErrOrderNotFound
-// if order was not found, ErrCustomerNotFound if customer was not found
-// and ErrGeneralDBFail if db returned db-specific error
+// GetCustomerOrders gets orders for provided customer id. Returns EntityError if
+// order or customer was not found and ErrGeneralDBFail if db returned db-specific error
 func (d *dvdstoreUC) GetCustomerOrders(customerId int) ([]*models.Order, error) {
 	if err := validateVar(customerId, "customerId"); err != nil {
 		d.log.Debugf("GetCustomerOrders validate.Var: %v", err)
@@ -197,9 +196,10 @@ func (d *dvdstoreUC) GetCustomerOrders(customerId int) ([]*models.Order, error) 
 	}
 
 	// Check if customer exists
+	var entErr *models.EntityError
 	_, err := d.GetCustomer(customerId)
 	if err != nil {
-		if err == models.ErrCustomerNotFound {
+		if errors.As(err, &entErr) {
 			return nil, err
 		}
 		d.log.Error(err)
@@ -209,7 +209,7 @@ func (d *dvdstoreUC) GetCustomerOrders(customerId int) ([]*models.Order, error) 
 	// Get orders
 	orders, err := d.pg.GetCustomerOrders(customerId)
 	if err != nil {
-		if err == models.ErrOrderNotFound {
+		if errors.As(err, &entErr) {
 			return nil, err
 		}
 		d.log.Error(err)
@@ -220,8 +220,8 @@ func (d *dvdstoreUC) GetCustomerOrders(customerId int) ([]*models.Order, error) 
 }
 
 // AddOrder creates order for customerId with provided products. Returns order and errors:
-// ErrOutOfInventory if product is out of inventory, ErrProductNotFound if product was not found,
-// ErrCustomerNotFound if customer was not found and ErrGeneralDBFail if db returned db-specific error
+// EntityError if product/customer was not found or product is out of inventory
+// and ErrGeneralDBFail if db returned db-specific error
 func (d *dvdstoreUC) AddOrder(customerId int, products []*models.Product) (*models.Order, error) {
 	// Validate inputs
 	if err := validateVar(customerId, "customerId"); err != nil {
@@ -241,8 +241,9 @@ func (d *dvdstoreUC) AddOrder(customerId int, products []*models.Product) (*mode
 	// Check if customer exists
 	// TODO: DRY
 	_, err := d.GetCustomer(customerId)
+	var entErr *models.EntityError
 	if err != nil {
-		if err == models.ErrCustomerNotFound {
+		if errors.As(err, &entErr) {
 			return nil, err
 		}
 		d.log.Error(err)
@@ -252,7 +253,7 @@ func (d *dvdstoreUC) AddOrder(customerId int, products []*models.Product) (*mode
 	// Add order
 	order, err := d.pg.AddOrder(customerId, products)
 	if err != nil {
-		if err == models.ErrProductNotFound || err == models.ErrProductOutOfInventory {
+		if errors.As(err, &entErr) {
 			return nil, err
 		}
 		d.log.Error(err)

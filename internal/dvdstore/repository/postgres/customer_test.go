@@ -57,7 +57,8 @@ func TestGetCustomerNotFound(t *testing.T) {
 
 	repo := &pgRepo{db}
 	cst, err := repo.GetCustomer(id)
-	assert.ErrorIs(t, err, models.ErrCustomerNotFound)
+	var entErr *models.EntityError
+	assert.ErrorAs(t, err, &entErr)
 	assert.Nil(t, cst)
 }
 

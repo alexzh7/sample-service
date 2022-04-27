@@ -37,7 +37,7 @@ func (p *pgRepo) GetAllProducts(limit int) ([]*models.Product, error) {
 	return products, nil
 }
 
-// GetProduct returns single product by given id and ErrProductNotFound if product wasn't found
+// GetProduct returns single product by given id and EntityError if product wasn't found
 func (p *pgRepo) GetProduct(productId int) (*models.Product, error) {
 	query := `
 	SELECT p.prod_id, p.title, p.price, i.quan_in_stock 
@@ -51,7 +51,7 @@ func (p *pgRepo) GetProduct(productId int) (*models.Product, error) {
 		Scan(&prod.Id, &prod.Title, &prod.Price, &prod.Quantity)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, models.ErrProductNotFound
+			return nil, models.ErrNotFound("product", productId)
 		}
 		return nil, fmt.Errorf("GetProduct sql.QueryRow: %v", err)
 	}

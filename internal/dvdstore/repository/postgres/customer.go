@@ -30,14 +30,14 @@ func (p *pgRepo) GetAllCustomers(limit int) ([]*models.Customer, error) {
 	return customers, nil
 }
 
-// GetCustomer returns single customer by given id and ErrCustomerNotFound if customer wasn't found
+// GetCustomer returns single customer by given id and EntityError if customer wasn't found
 func (p *pgRepo) GetCustomer(customerId int) (*models.Customer, error) {
 	cst := models.Customer{}
 	err := p.db.QueryRow("SELECT customerid, firstname, lastname, age FROM customers WHERE customerid=$1",
 		customerId).Scan(&cst.Id, &cst.FirstName, &cst.LastName, &cst.Age)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, models.ErrCustomerNotFound
+			return nil, models.ErrNotFound("customer", customerId)
 		}
 		return nil, fmt.Errorf("GetCustomer sql.QueryRow: %v", err)
 	}
