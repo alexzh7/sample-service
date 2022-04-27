@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/alexzh7/sample-service/internal/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -52,7 +53,7 @@ func TestGetProductNotFound(t *testing.T) {
 
 	repo := &pgRepo{db}
 	pr, err := repo.GetProduct(id)
-	assert.ErrorIs(t, err, ErrProductNotFound)
+	assert.ErrorIs(t, err, models.ErrProductNotFound)
 	assert.Nil(t, pr)
 }
 

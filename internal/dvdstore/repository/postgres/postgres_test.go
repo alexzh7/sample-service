@@ -20,6 +20,7 @@ var (
 		return fmt.Errorf("objects not equal, expected: %+v,\n got: %+v", string(w), string(g))
 	}
 
+	// Mock objects
 	mockCustomer = &models.Customer{Id: 1, FirstName: "John", LastName: "Doe", Age: 40}
 	mockProduct  = &models.Product{Id: 1, Title: "Interstellar", Price: 80.00, Quantity: 60}
 	mockProducts = []*models.Product{
@@ -30,7 +31,6 @@ var (
 )
 
 // NewMock returns mock db connection
-// TODO: must be part of tests!
 func NewMock() (*sql.DB, sqlmock.Sqlmock) {
 	db, mock, err := sqlmock.New()
 	if err != nil {

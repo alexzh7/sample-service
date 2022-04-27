@@ -51,7 +51,7 @@ func (p *pgRepo) GetProduct(productId int) (*models.Product, error) {
 		Scan(&prod.Id, &prod.Title, &prod.Price, &prod.Quantity)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrProductNotFound
+			return nil, models.ErrProductNotFound
 		}
 		return nil, fmt.Errorf("GetProduct sql.QueryRow: %v", err)
 	}

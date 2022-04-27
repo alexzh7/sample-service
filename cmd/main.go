@@ -7,7 +7,9 @@ import (
 	"go.uber.org/zap"
 
 	repo "github.com/alexzh7/sample-service/internal/dvdstore/repository/postgres"
+	"github.com/alexzh7/sample-service/internal/dvdstore/usecase"
 	"github.com/alexzh7/sample-service/internal/models"
+	"github.com/go-playground/validator/v10"
 	_ "github.com/lib/pq"
 )
 
@@ -24,20 +26,18 @@ func main() {
 		l.Fatal(err)
 	}
 
-	pgRepo := repo.NewPgRepo(db)
-
-	prods := []*models.Product{
-		{Id: 100, Quantity: 1},
-		{Id: 5, Quantity: 3},
-		{Id: 46, Quantity: 2},
-	}
-	ord, err := pgRepo.AddOrder(16, prods)
-
-	if err == nil {
-		fmt.Println(ord)
-		for _, v := range ord.Products {
-			fmt.Println(v)
-		}
+	pgRepo, err := repo.NewPgRepo(db)
+	if err != nil {
+		l.Fatal(err)
 	}
 
+	validator := validator.New()
+
+	uc := usecase.NewDvdstoreUC(pgRepo, l, validator)
+
+	prods := []*models.Product{{Quantity: 2}}
+	res, err := uc.AddOrder(10, prods)
+
+	fmt.Println(res)
+	fmt.Println(err)
 }

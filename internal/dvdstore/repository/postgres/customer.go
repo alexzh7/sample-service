@@ -37,7 +37,7 @@ func (p *pgRepo) GetCustomer(customerId int) (*models.Customer, error) {
 		customerId).Scan(&cst.Id, &cst.FirstName, &cst.LastName, &cst.Age)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrCustomerNotFound
+			return nil, models.ErrCustomerNotFound
 		}
 		return nil, fmt.Errorf("GetCustomer sql.QueryRow: %v", err)
 	}

@@ -48,7 +48,7 @@ func TestGetOrderNotFound(t *testing.T) {
 
 	repo := &pgRepo{db}
 	order, err := repo.GetOrder(10)
-	assert.ErrorIs(t, err, ErrOrderNotFound)
+	assert.ErrorIs(t, err, models.ErrOrderNotFound)
 	assert.Nil(t, order)
 }
 
@@ -108,7 +108,7 @@ func TestGetCustomerOrdersNotFound(t *testing.T) {
 
 	repo := &pgRepo{db}
 	order, err := repo.GetCustomerOrders(10)
-	assert.ErrorIs(t, err, ErrOrderNotFound)
+	assert.ErrorIs(t, err, models.ErrOrderNotFound)
 	assert.Nil(t, order)
 }
 
@@ -189,7 +189,7 @@ func TestAddOrderProductNotFound(t *testing.T) {
 	repo := &pgRepo{db}
 	order, err := repo.AddOrder(customerId, mockProducts)
 	assert.Nil(t, order)
-	assert.ErrorIs(t, err, ErrProductNotFound)
+	assert.ErrorIs(t, err, models.ErrProductNotFound)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -215,7 +215,7 @@ func TestAddOrderOutOfInventory(t *testing.T) {
 	repo := &pgRepo{db}
 	order, err := repo.AddOrder(customerId, mockProducts)
 	assert.Nil(t, order)
-	assert.ErrorIs(t, err, ErrProductOutOfInventory)
+	assert.ErrorIs(t, err, models.ErrProductOutOfInventory)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

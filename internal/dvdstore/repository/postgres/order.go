@@ -45,7 +45,7 @@ func (p *pgRepo) GetOrder(orderId int) (*models.Order, error) {
 	}
 
 	if len(products) == 0 {
-		return nil, ErrOrderNotFound
+		return nil, models.ErrOrderNotFound
 	}
 
 	ord.Products = products
@@ -97,7 +97,7 @@ func (p *pgRepo) GetCustomerOrders(customerId int) ([]*models.Order, error) {
 	}
 
 	if len(orders) == 0 {
-		return nil, ErrOrderNotFound
+		return nil, models.ErrOrderNotFound
 	}
 
 	return orders, nil
@@ -149,14 +149,14 @@ func (p *pgRepo) AddOrder(customerId int, products []*models.Product) (*models.O
 
 	// Check existence
 	if len(products) != len(prodsInStock) {
-		return nil, ErrProductNotFound
+		return nil, models.ErrProductNotFound
 	}
 	// Check quantity, add products info
 	var tax, net, total float64
 	sort.Sort(models.SortById(products))
 	for i, p := range products {
 		if p.Quantity > prodsInStock[i].Quantity {
-			return nil, ErrProductOutOfInventory
+			return nil, models.ErrProductOutOfInventory
 		}
 		p.Price = prodsInStock[i].Price
 		p.Title = prodsInStock[i].Title

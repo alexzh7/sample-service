@@ -2,91 +2,286 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/alexzh7/sample-service/internal/dvdstore"
 	"github.com/alexzh7/sample-service/internal/models"
+	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 )
 
 // dvdstoreUC is a use case for dvdstore. It implements Usecase interface
 type dvdstoreUC struct {
-	pg  dvdstore.PostgresRepo
-	log zap.SugaredLogger
-	// TODO: Add validation
+	pg       dvdstore.PostgresRepo
+	log      *zap.SugaredLogger
+	validate *validator.Validate
 }
 
 // NewDvdstoreUC returns new dvd store use case
-func NewDvdstoreUC(pg dvdstore.PostgresRepo, log zap.SugaredLogger) *dvdstoreUC {
-	return &dvdstoreUC{pg: pg, log: log}
+func NewDvdstoreUC(
+	pg dvdstore.PostgresRepo,
+	log *zap.SugaredLogger,
+	vl *validator.Validate,
+) *dvdstoreUC {
+	return &dvdstoreUC{pg: pg, log: log, validate: vl}
 }
 
-// GetCustomers returns list of all customers limited by limit
+// GetCustomers returns list of all customers limited by limit and ErrGeneralDBFail
+// if db returned db-specific error. Limit must be > 0
 func (d *dvdstoreUC) GetCustomers(limit int) ([]*models.Customer, error) {
-	if limit < 0 {
-		return nil, errors.New("GetCustomers: limit must be > 0")
+	if err := validateVar(limit, "limit"); err != nil {
+		d.log.Debugf("GetCustomers validate.Var: %v", err)
+		return nil, err
 	}
-	return d.pg.GetAllCustomers(limit)
+
+	customers, err := d.pg.GetAllCustomers(limit)
+	if err != nil {
+		d.log.Error(err)
+		return nil, models.ErrGeneralDBFail
+	}
+
+	return customers, nil
 }
 
-// GetCustomer returns customer by given id and ErrCustomerNotFound if customer wasn't found
+// GetCustomer returns customer by given id, ErrCustomerNotFound if customer wasn't found
+// and ErrGeneralDBFail if db returned db-specific error
 func (d *dvdstoreUC) GetCustomer(customerId int) (*models.Customer, error) {
-	return d.pg.GetCustomer(customerId)
-}
-
-// AddCustomer adds a customer returning id
-// TODO: add validation to check firstname, lastname, age
-func (d *dvdstoreUC) AddCustomer(customer *models.Customer) (id int, err error) {
-	return d.pg.AddCustomer(customer)
-}
-
-// DeleteCustomer deletes customer with provided id
-func (d *dvdstoreUC) DeleteCustomer(customerId int) error {
-	return d.pg.DeleteCustomer(customerId)
-}
-
-// GetProducts returns slice of all products limited by limit
-func (d *dvdstoreUC) GetProducts(limit int) ([]*models.Product, error) {
-	if limit < 0 {
-		return nil, errors.New("GetProducts: limit must be > 0")
+	if err := validateVar(customerId, "customerId"); err != nil {
+		d.log.Debugf("GetCustomer validate.Var: %v", err)
+		return nil, err
 	}
-	return d.pg.GetAllProducts(limit)
+
+	customer, err := d.pg.GetCustomer(customerId)
+	if err != nil {
+		if err == models.ErrCustomerNotFound {
+			return nil, err
+		}
+		d.log.Error(err)
+		return nil, models.ErrGeneralDBFail
+	}
+
+	return customer, nil
 }
 
-// GetProduct returns product by given id and ErrProductNotFound if product wasn't found
+// AddCustomer adds a customer returning id and ErrGeneralDBFail if db returned db-specific error
+func (d *dvdstoreUC) AddCustomer(customer *models.Customer) (id int, err error) {
+	err = d.validate.StructPartial(customer, "FirstName", "LastName", "Age")
+	if err != nil {
+		d.log.Debugf("AddCustomer validate.StructPartial: %v", err)
+		return 0, errors.New("customer firstName, lastName and age must be valid")
+	}
+
+	id, err = d.pg.AddCustomer(customer)
+	if err != nil {
+		d.log.Error(err)
+		return 0, models.ErrGeneralDBFail
+	}
+
+	return id, nil
+}
+
+// DeleteCustomer deletes customer with provided id and ErrGeneralDBFail if db returned
+// db-specific error
+func (d *dvdstoreUC) DeleteCustomer(customerId int) error {
+	if err := validateVar(customerId, "customerId"); err != nil {
+		d.log.Debugf("DeleteCustomer validate.Var: %v", err)
+		return err
+	}
+
+	err := d.pg.DeleteCustomer(customerId)
+	if err != nil {
+		d.log.Error(err)
+		return models.ErrGeneralDBFail
+	}
+
+	return nil
+}
+
+// GetProducts returns slice of all products limited by limit and ErrGeneralDBFail if db
+// returned db-specific error
+func (d *dvdstoreUC) GetProducts(limit int) ([]*models.Product, error) {
+	if err := validateVar(limit, "limit"); err != nil {
+		d.log.Debugf("GetProducts validate.Var: %v", err)
+		return nil, err
+	}
+
+	products, err := d.pg.GetAllProducts(limit)
+	if err != nil {
+		d.log.Error(err)
+		return nil, models.ErrGeneralDBFail
+	}
+
+	return products, nil
+}
+
+// GetProduct returns product by given id, ErrProductNotFound if product wasn't found
+// and ErrGeneralDBFail if db returned db-specific error
 func (d *dvdstoreUC) GetProduct(productId int) (*models.Product, error) {
-	return d.pg.GetProduct(productId)
+	if err := validateVar(productId, "productId"); err != nil {
+		d.log.Debugf("GetProduct validate.Var: %v", err)
+		return nil, err
+	}
+
+	product, err := d.pg.GetProduct(productId)
+	if err != nil {
+		if err == models.ErrProductNotFound {
+			return nil, err
+		}
+		d.log.Error(err)
+		return nil, models.ErrGeneralDBFail
+	}
+
+	return product, nil
 }
 
-// AddProduct adds a product returning id
-// TODO: add validation on title, price, quantity
+// AddProduct adds a product returning id and ErrGeneralDBFail if db returned db-specific error
 func (d *dvdstoreUC) AddProduct(prod *models.Product) (productId int, err error) {
-	return d.pg.AddProduct(prod)
+	err = d.validate.StructPartial(prod, "Title", "Price", "Quantity")
+	if err != nil {
+		d.log.Debugf("AddProduct validate.StructPartial: %v", err)
+		return 0, errors.New("product title, price and quantity must be valid")
+	}
+
+	productId, err = d.pg.AddProduct(prod)
+	if err != nil {
+		d.log.Error(err)
+		return 0, models.ErrGeneralDBFail
+	}
+
+	return productId, nil
 }
 
-// DeleteProduct deletes product with provided id
+// DeleteProduct deletes product with provided id and ErrGeneralDBFail if db returned db-specific error
 func (d *dvdstoreUC) DeleteProduct(productId int) error {
-	return d.pg.DeleteProduct(productId)
+	if err := validateVar(productId, "productId"); err != nil {
+		d.log.Debugf("DeleteProduct validate.Var: %v", err)
+		return err
+	}
+
+	err := d.pg.DeleteProduct(productId)
+	if err != nil {
+		d.log.Error(err)
+		return models.ErrGeneralDBFail
+	}
+
+	return nil
 }
 
 // GetOrder gets order by order id. Returns ErrOrderNotFound if order was not found
+// and ErrGeneralDBFail if db returned db-specific error
 func (d *dvdstoreUC) GetOrder(orderId int) (*models.Order, error) {
-	return d.pg.GetOrder(orderId)
+	if err := validateVar(orderId, "orderId"); err != nil {
+		d.log.Debugf("GetOrder validate.Var: %v", err)
+		return nil, err
+	}
+
+	order, err := d.pg.GetOrder(orderId)
+	if err != nil {
+		if err == models.ErrOrderNotFound {
+			return nil, err
+		}
+		d.log.Error(err)
+		return nil, models.ErrGeneralDBFail
+	}
+
+	return order, nil
 }
 
-// GetCustomerOrders gets orders for provided customer id. Returns ErrOrderNotFound if order was not found
+// GetCustomerOrders gets orders for provided customer id. Returns ErrOrderNotFound
+// if order was not found, ErrCustomerNotFound if customer was not found
+// and ErrGeneralDBFail if db returned db-specific error
 func (d *dvdstoreUC) GetCustomerOrders(customerId int) ([]*models.Order, error) {
-	return d.pg.GetCustomerOrders(customerId)
+	if err := validateVar(customerId, "customerId"); err != nil {
+		d.log.Debugf("GetCustomerOrders validate.Var: %v", err)
+		return nil, err
+	}
+
+	// Check if customer exists
+	_, err := d.GetCustomer(customerId)
+	if err != nil {
+		if err == models.ErrCustomerNotFound {
+			return nil, err
+		}
+		d.log.Error(err)
+		return nil, models.ErrGeneralDBFail
+	}
+
+	// Get orders
+	orders, err := d.pg.GetCustomerOrders(customerId)
+	if err != nil {
+		if err == models.ErrOrderNotFound {
+			return nil, err
+		}
+		d.log.Error(err)
+		return nil, models.ErrGeneralDBFail
+	}
+
+	return orders, nil
 }
 
-// AddOrder creates order for customerId with provided products. Passed products must have id and
-// quantity fields filled. Returns order and errors: ErrOutOfInventory if product is out of inventory,
-// ErrProductNotFound if product was not found
-// TODO: Add validation on product.Id, product.Quantity > 0
+// AddOrder creates order for customerId with provided products. Returns order and errors:
+// ErrOutOfInventory if product is out of inventory, ErrProductNotFound if product was not found,
+// ErrCustomerNotFound if customer was not found and ErrGeneralDBFail if db returned db-specific error
 func (d *dvdstoreUC) AddOrder(customerId int, products []*models.Product) (*models.Order, error) {
-	return d.pg.AddOrder(customerId, products)
+	// Validate inputs
+	if err := validateVar(customerId, "customerId"); err != nil {
+		d.log.Debugf("AddOrder validate.Var: %v", err)
+		return nil, err
+	}
+	if len(products) == 0 {
+		return nil, errors.New("products must not be empty")
+	}
+	for _, p := range products {
+		if err := d.validate.StructPartial(p, "Id", "Quantity"); err != nil {
+			d.log.Debugf("AddOrder validate.StructPartial: %v", err)
+			return nil, errors.New("product id and quantity must be valid")
+		}
+	}
+
+	// Check if customer exists
+	// TODO: DRY
+	_, err := d.GetCustomer(customerId)
+	if err != nil {
+		if err == models.ErrCustomerNotFound {
+			return nil, err
+		}
+		d.log.Error(err)
+		return nil, models.ErrGeneralDBFail
+	}
+
+	// Add order
+	order, err := d.pg.AddOrder(customerId, products)
+	if err != nil {
+		if err == models.ErrProductNotFound || err == models.ErrProductOutOfInventory {
+			return nil, err
+		}
+		d.log.Error(err)
+		return nil, models.ErrGeneralDBFail
+	}
+
+	return order, nil
 }
 
-// DeleteOrder deletes order by given order id
+// DeleteOrder deletes order by given order id and ErrGeneralDBFail if db returned db-specific error
 func (d *dvdstoreUC) DeleteOrder(orderId int) error {
-	return d.pg.DeleteOrder(orderId)
+	if err := validateVar(orderId, "orderId"); err != nil {
+		d.log.Debugf("DeleteOrder validate.Var: %v", err)
+		return err
+	}
+
+	err := d.pg.DeleteOrder(orderId)
+	if err != nil {
+		d.log.Error(err)
+		return models.ErrGeneralDBFail
+	}
+	return nil
+}
+
+// validateVar is a helper function that checks if var is > 0 and returns
+// error with variable name if not ok
+func validateVar(variable int, varName string) error {
+	if variable > 0 {
+		return nil
+	}
+	return fmt.Errorf("%v must be > 0", varName)
 }

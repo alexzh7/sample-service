@@ -5,9 +5,9 @@ import "time"
 // Customer model
 type Customer struct {
 	Id        int      `json:"id,omitempty"`
-	FirstName string   `json:"firstName,omitempty"`
-	LastName  string   `json:"lastName,omitempty"`
-	Age       int      `json:"age,omitempty"`
+	FirstName string   `json:"firstName,omitempty" validate:"required"`
+	LastName  string   `json:"lastName,omitempty" validate:"required"`
+	Age       int      `json:"age,omitempty" validate:"required,gt=0"`
 	Orders    []*Order `json:"orders,omitempty"`
 }
 
@@ -23,10 +23,10 @@ type Order struct {
 
 // Product model
 type Product struct {
-	Id       int     `json:"id,omitempty"`
-	Title    string  `json:"title,omitempty"`
-	Price    float64 `json:"price,omitempty"`
-	Quantity int     `json:"quantity,omitempty"`
+	Id       int     `json:"id,omitempty" validate:"required,gte=0"`
+	Title    string  `json:"title,omitempty" validate:"required"`
+	Price    float64 `json:"price,omitempty" validate:"required,gte=0"`
+	Quantity int     `json:"quantity,omitempty" validate:"required,gte=0"`
 }
 
 // SortById implements sort.Interface and is used to sort slice of products by id
