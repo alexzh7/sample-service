@@ -1,4 +1,4 @@
 package usecase
 
-// Implement interface
+// Implement dvdstore.PostgresRepo
 // Check ALL validations

@@ -1,0 +1,179 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package proto;
+option go_package = "github.com/alexzh7/sample-service/proto;proto";
+
+message Customer {
+    int64 Id = 1;
+    string FirstName = 2;
+    string LastName = 3;
+    int64 Age = 4;
+}
+
+message Product {
+    int64 Id = 1; 
+    string Title = 2;
+    double Price = 3;
+    int64 Quantity = 4;
+}
+
+message Order {
+    int64 Id = 1;
+    google.protobuf.Timestamp Date = 2; // ??
+    double NetAmount = 3;
+    double Tax = 4;
+    double TotalAmount = 5;
+    repeated Product ProductList = 6;
+}
+
+// GetCustomersReq contains Limit that defines the limit of customers to return
+message GetCustomersReq {
+    int64 Limit = 1;
+}
+
+// GetCustomersRes contains list of customers
+message GetCustomersRes {
+    repeated Customer CustomerList = 1;
+}
+
+// GetCustomerReq contains customer id to get
+message GetCustomerReq {
+    int64 CustomerID = 1;
+}
+
+// GetCustomerRes contains single customer
+message GetCustomerRes {
+    Customer Customer = 1;
+}
+
+// AddCustomerReq contains single customer to add
+message AddCustomerReq {
+    Customer Customer = 1;
+}
+
+// AddCustomerRes contains added customer id
+message AddCustomerRes {
+    int64 CustomerID = 1;
+}
+
+// DeleteCustomerReq contains customer id to delete
+message DeleteCustomerReq {
+    int64 CustomerID = 1;
+}
+
+// DeleteCustomerRes returns only error
+message DeleteCustomerRes {
+}
+
+// GetProductsReq contains Limit that defines the limit of products to return
+message GetProductsReq {
+    int64 Limit = 1;
+}
+
+// GetProductsRes contains list of products
+message GetProductsRes {
+    repeated Product ProductList = 1;
+}
+
+// GetProductReq contains product id to get
+message GetProductReq {
+    int64 ProductID = 1;
+}
+
+// GetProductRes contains single product
+message GetProductRes {
+    Product Product = 1;
+}
+
+// AddProductReq contains product tot add
+message AddProductReq {
+    Product Product = 1;
+}
+
+// AddProductRes contains added product id
+message AddProductRes {
+    int64 ProductID = 1;
+}
+
+// DeleteProductReq contains product id to delete
+message DeleteProductReq {
+    int64 ProductID = 1;
+}
+
+// DeleteProductRes returns only error
+message DeleteProductRes {
+}
+
+// GetOrderReq contains order id to get
+message GetOrderReq {
+    int64 OrderID = 1;
+}
+
+//GetOrderRes contains single order
+message GetOrderRes {
+    Order Order = 1;
+}
+
+// GetCustomerOrdersReq contains customer id
+message GetCustomerOrdersReq {
+    int64 CustomerID = 1;
+}
+
+// GetCustomerOrdersRes contain list of customer orders
+message GetCustomerOrdersRes {
+    repeated Order OrderList = 1;
+}
+
+// AddOrderReq contains customer id and list of products to make order
+message AddOrderReq {
+    int64 CustomerID = 1;
+    repeated Product ProductList = 2;
+}
+
+// AddOrderRes contains created order id
+message AddOrderRes {
+    int64 OrderID = 1;
+}
+
+// DeleteOrderReq contains order id to delete
+message DeleteOrderReq {
+    int64 OrderID = 1;
+}
+
+// DeleteOrderRes returns only error
+message DeleteOrderRes {
+}
+
+// Every call has own request and response messages for ease of maintenance
+// if methods will change
+service Dvdstore {
+    // GetCustomers returns list of all Customers limited by provided limit
+    rpc GetCustomers(GetCustomersReq) returns (GetCustomersRes);
+    // GetCustomer returns Customer by provided id
+    rpc GetCustomer(GetCustomerReq) returns (GetCustomerRes);
+    // AddCustomer adds passed Customer and returns his id
+    rpc AddCustomer(AddCustomerReq) returns (AddCustomerRes);
+    // DeleteCustomer deletes Customer by provided id
+    rpc DeleteCustomer(DeleteCustomerReq) returns (DeleteCustomerRes);
+
+    // GetProducts returns list of all Products limited by provided limit
+    rpc GetProducts(GetProductsReq) returns (GetProductsRes);
+    // GetProduct returns Product by provided id
+    rpc GetProduct(GetProductReq) returns (GetProductRes);
+    // AddProduct adds passed Product and returns his id
+    rpc AddProduct(AddProductReq) returns (AddProductRes);
+    // DeleteProduct deletes Product by provided id
+    rpc DeleteProduct(DeleteProductReq) returns (DeleteProductRes);
+
+    // GetOrder gets order by provided id
+    rpc GetOrder(GetOrderReq) returns (GetOrderRes);
+    // GetCustomerOrders returns customer orders by provided customer id
+    rpc GetCustomerOrders(GetCustomerOrdersReq) returns (GetCustomerOrdersRes);
+    // AddOrder adds order for passed customer id with provided products 
+    // and returns created order id 
+    rpc AddOrder(AddOrderReq) returns (AddOrderRes);
+    // DeleteOrder deletes order with provided order id
+    rpc DeleteOrder (DeleteOrderReq) returns (DeleteOrderRes);
+}

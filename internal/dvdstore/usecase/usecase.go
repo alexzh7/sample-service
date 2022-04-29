@@ -68,7 +68,7 @@ func (d *dvdstoreUC) AddCustomer(customer *models.Customer) (id int, err error) 
 	err = d.validate.StructPartial(customer, "FirstName", "LastName", "Age")
 	if err != nil {
 		d.log.Debugf("AddCustomer validate.StructPartial: %v", err)
-		return 0, errors.New("customer firstName, lastName and age must be valid")
+		return 0, models.ErrFieldsNotValid("firstname", "lastname", "age")
 	}
 
 	id, err = d.pg.AddCustomer(customer)
@@ -139,7 +139,7 @@ func (d *dvdstoreUC) AddProduct(prod *models.Product) (productId int, err error)
 	err = d.validate.StructPartial(prod, "Title", "Price", "Quantity")
 	if err != nil {
 		d.log.Debugf("AddProduct validate.StructPartial: %v", err)
-		return 0, errors.New("product title, price and quantity must be valid")
+		return 0, models.ErrFieldsNotValid("title", "price", "quantity")
 	}
 
 	productId, err = d.pg.AddProduct(prod)
@@ -234,7 +234,7 @@ func (d *dvdstoreUC) AddOrder(customerId int, products []*models.Product) (*mode
 	for _, p := range products {
 		if err := d.validate.StructPartial(p, "Id", "Quantity"); err != nil {
 			d.log.Debugf("AddOrder validate.StructPartial: %v", err)
-			return nil, errors.New("product id and quantity must be valid")
+			return nil, models.ErrFieldsNotValid("id", "quantity")
 		}
 	}
 
@@ -279,10 +279,13 @@ func (d *dvdstoreUC) DeleteOrder(orderId int) error {
 }
 
 // validateVar is a helper function that checks if var is > 0 and returns
-// error with variable name if not ok
+// ValidationError if not ok
 func validateVar(variable int, varName string) error {
 	if variable > 0 {
 		return nil
 	}
-	return fmt.Errorf("%v must be > 0", varName)
+
+	return &models.ValidationError{
+		Message: fmt.Sprintf("%v must be > 0", varName),
+	}
 }

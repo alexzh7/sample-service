@@ -8,4 +8,4 @@ type dvdstoreService struct {
 	uc dvdstore.Usecase
 }
 
-// log, validate
+// AddOrder returns only orderID
