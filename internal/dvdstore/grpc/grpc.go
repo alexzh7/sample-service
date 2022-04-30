@@ -24,12 +24,12 @@ func NewDvdstoreService(uc dvdstore.Usecase, log *zap.SugaredLogger) *dvdstoreSe
 func (d *dvdstoreService) GetCustomers(ctx context.Context, req *proto.GetCustomersReq) (*proto.GetCustomersRes, error) {
 	d.log.Infof("Recieved GetCustomers call with limit %v", req.GetLimit())
 
-	//try req.Limit
+	// grpc to struct method in models?
 
 	// Get customers
 	customers, err := d.uc.GetCustomers(int(req.GetLimit()))
 	if err != nil {
-		return nil, err //TODO: do err
+		return nil, grpcError(err)
 	}
 
 	// Customer model to grpc model

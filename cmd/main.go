@@ -17,13 +17,16 @@ import (
 	_ "github.com/lib/pq"
 )
 
+const grpcport = 9090
+
+// TODO: Fix TODOs :)
+// TODO: queries to separate file
 func main() {
 	// Logger
 	l := zap.NewExample().Sugar()
 	defer l.Sync()
 
 	// TODO: Read config from env/file
-	// TODO: Fix TODOs :)
 	connStr := "user=pguser password=pgpass dbname=dvdstore sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -47,10 +50,17 @@ func main() {
 	reflection.Register(grpcSrv)
 
 	// Create a TCP socket for inbound server connections
-	ls, err := net.Listen("tcp", fmt.Sprintf(":%d", 9092))
+	ls, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcport))
 	if err != nil {
 		l.Fatalf("Unable to create listener: %v", err)
 	}
+	l.Infof("GRPC listening on port %v", grpcport)
 
+	//TODO: graceful shutdown
 	grpcSrv.Serve(ls)
+
+	// grpcurl -plaintext localhost:9090 describe
+	// grpcurl -plaintext localhost:9090 describe proto.Dvdstore.GetOrder
+	// grpcurl -plaintext localhost:9090 describe proto.GetOrderReq
+	// grpcurl -d '{"Limit":20}' -plaintext localhost:9090 proto.Dvdstore/GetCustomers
 }
