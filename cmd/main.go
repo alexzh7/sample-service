@@ -12,8 +12,8 @@ import (
 	service "github.com/alexzh7/sample-service/internal/dvdstore/grpc"
 	repo "github.com/alexzh7/sample-service/internal/dvdstore/repository/postgres"
 	"github.com/alexzh7/sample-service/internal/dvdstore/usecase"
+	"github.com/alexzh7/sample-service/internal/models"
 	"github.com/alexzh7/sample-service/proto"
-	"github.com/go-playground/validator/v10"
 	_ "github.com/lib/pq"
 )
 
@@ -37,7 +37,7 @@ func main() {
 	if err != nil {
 		l.Fatal(err)
 	}
-	validator := validator.New()
+	validator := models.NewValidation()
 	// New use case
 	uc := usecase.NewDvdstoreUC(pgRepo, l, validator)
 

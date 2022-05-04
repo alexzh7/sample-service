@@ -10,9 +10,9 @@ import (
 // Customer model
 type Customer struct {
 	Id        int      `json:"id,omitempty"`
-	FirstName string   `json:"firstName,omitempty" validate:"required"`
-	LastName  string   `json:"lastName,omitempty" validate:"required"`
-	Age       int      `json:"age,omitempty" validate:"required,gt=0"`
+	FirstName string   `json:"firstName,omitempty" validate:"required,max=50"`
+	LastName  string   `json:"lastName,omitempty" validate:"required,max=50"`
+	Age       int      `json:"age,omitempty" validate:"required,gt=0,max=150"`
 	Orders    []*Order `json:"orders,omitempty"`
 }
 
@@ -28,10 +28,10 @@ func (c *Customer) ToProto() *proto.Customer {
 
 // Product model
 type Product struct {
-	Id       int     `json:"id,omitempty" validate:"required,gte=0"`
-	Title    string  `json:"title,omitempty" validate:"required"`
-	Price    float64 `json:"price,omitempty" validate:"required,gte=0"`
-	Quantity int     `json:"quantity,omitempty" validate:"required,gte=0"`
+	Id       int     `json:"id,omitempty" validate:"required,gte=0,int"`
+	Title    string  `json:"title,omitempty" validate:"required,max=50"`
+	Price    float64 `json:"price,omitempty" validate:"required,gte=0,float"`
+	Quantity int     `json:"quantity,omitempty" validate:"required,gte=0,int"`
 }
 
 // Map models.Product to proto.Product

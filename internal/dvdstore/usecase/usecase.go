@@ -6,7 +6,6 @@ import (
 
 	"github.com/alexzh7/sample-service/internal/dvdstore"
 	"github.com/alexzh7/sample-service/internal/models"
-	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 )
 
@@ -14,14 +13,14 @@ import (
 type dvdstoreUC struct {
 	pg       dvdstore.PostgresRepo
 	log      *zap.SugaredLogger
-	validate *validator.Validate
+	validate *models.Validation
 }
 
 // NewDvdstoreUC returns new dvd store use case
 func NewDvdstoreUC(
 	pg dvdstore.PostgresRepo,
 	log *zap.SugaredLogger,
-	vl *validator.Validate,
+	vl *models.Validation,
 ) *dvdstoreUC {
 	return &dvdstoreUC{pg: pg, log: log, validate: vl}
 }
