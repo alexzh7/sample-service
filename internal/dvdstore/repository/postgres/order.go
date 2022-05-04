@@ -11,19 +11,7 @@ import (
 
 // GetOrder gets order by order id. Returns EntityError if order was not found
 func (p *pgRepo) GetOrder(orderId int) (*models.Order, error) {
-	query := `
-	SELECT t.orderid, t.orderdate, t.netamount, t.tax, t.totalamount,
-	t.prod_id, p.title, p.price, t.quantity
-	FROM products p INNER JOIN
-
-	(SELECT o.*, ol.prod_id, ol.quantity
-	FROM orders o INNER JOIN orderlines ol
-	ON o.orderid = ol.orderid) t
-
-	ON p.prod_id = t.prod_id
-	WHERE orderid=$1
-	`
-	rows, err := p.db.Query(query, orderId)
+	rows, err := p.db.Query(sqlGetOrder, orderId)
 	if err != nil {
 		return nil, fmt.Errorf("GetOrder sql.Query: %v", err)
 	}
@@ -55,19 +43,7 @@ func (p *pgRepo) GetOrder(orderId int) (*models.Order, error) {
 
 // GetCustomerOrders gets orders for provided customer id. Returns EntityError if order was not found
 func (p *pgRepo) GetCustomerOrders(customerId int) ([]*models.Order, error) {
-	query := `
-	SELECT t.orderid, t.orderdate, t.netamount, t.tax, t.totalamount,
-	t.prod_id, p.title, p.price, t.quantity
-	FROM products p INNER JOIN
-
-	(SELECT o.*, ol.prod_id, ol.quantity
-	FROM orders o INNER JOIN orderlines ol
-	ON o.orderid = ol.orderid) t
-
-	ON p.prod_id = t.prod_id
-	WHERE customerid=$1
-	`
-	rows, err := p.db.Query(query, customerId)
+	rows, err := p.db.Query(sqlGetCustomerOrders, customerId)
 	if err != nil {
 		return nil, fmt.Errorf("GetCustomerOrders sql.Query: %v", err)
 	}
@@ -118,12 +94,6 @@ func (p *pgRepo) AddOrder(customerId int, products []*models.Product) (*models.O
 		productIds = append(productIds, p.Id)
 	}
 
-	selectQuery := `
-	SELECT i.prod_id, i.quan_in_stock, p.price, p.title
-	FROM inventory i INNER JOIN products p
-	ON i.prod_id = p.prod_id
-	WHERE i.prod_id = ANY($1)`
-
 	tx, err := p.db.Begin()
 	if err != nil {
 		return fail("tx.Begin", err)
@@ -131,7 +101,7 @@ func (p *pgRepo) AddOrder(customerId int, products []*models.Product) (*models.O
 	defer tx.Rollback()
 
 	// Check products existence and their quantity in stock
-	rows, err := tx.Query(selectQuery, pq.Array(productIds))
+	rows, err := tx.Query(sqlAddOrderSelectProducts, pq.Array(productIds))
 	if err != nil {
 		return fail("SELECT tx.Query", err)
 	}
@@ -157,7 +127,7 @@ func (p *pgRepo) AddOrder(customerId int, products []*models.Product) (*models.O
 	sort.Sort(models.SortById(products))
 	for i, p := range products {
 		if p.Quantity > prodsInStock[i].Quantity {
-			return nil, models.ErrOutOfInventory("product", i)
+			return nil, models.ErrOutOfInventory("product", prodsInStock[i].Id)
 		}
 		p.Price = prodsInStock[i].Price
 		p.Title = prodsInStock[i].Title
@@ -180,11 +150,7 @@ func (p *pgRepo) AddOrder(customerId int, products []*models.Product) (*models.O
 	}
 
 	// Insert order
-	insertQuery := `
-	INSERT INTO orders (orderdate, customerid, netamount, tax, totalamount) 
-	VALUES ($1, $2, $3, $4, $5)
-	RETURNING orderid
-	`
+	// Insert in orders
 	ord := &models.Order{
 		Date:        time.Now().UTC(),
 		NetAmount:   net,
@@ -192,11 +158,25 @@ func (p *pgRepo) AddOrder(customerId int, products []*models.Product) (*models.O
 		TotalAmount: total,
 		Products:    products,
 	}
-	if err = tx.QueryRow(insertQuery, ord.Date, customerId, ord.NetAmount, ord.Tax, ord.TotalAmount).
+
+	if err = tx.QueryRow(sqlAddOrder, ord.Date, customerId, ord.NetAmount, ord.Tax, ord.TotalAmount).
 		Scan(&ord.Id); err != nil {
 		return fail("INSERT orders tx.QueryRow", err)
 	}
 
+	// Insert in orderlines
+	olStmt, err := tx.Prepare(sqlAddOrderOrderlines)
+	if err != nil {
+		return fail("INSERT orderlines tx.Prepare", err)
+	}
+	defer olStmt.Close()
+	for i, p := range ord.Products {
+		if _, err := olStmt.Exec(i+1, ord.Id, p.Id, p.Quantity, ord.Date); err != nil {
+			return fail("INSERT orderlines tx.Exec", err)
+		}
+	}
+
+	// Commit
 	if err = tx.Commit(); err != nil {
 		return fail("INSERT orders tx.Commit", err)
 	}

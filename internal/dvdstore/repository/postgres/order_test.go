@@ -154,6 +154,12 @@ func TestAddOrder(t *testing.T) {
 	mock.ExpectQuery("INSERT (.+)").WithArgs(AnyTime{}, customerId, ord.NetAmount,
 		ord.Tax, ord.TotalAmount).WillReturnRows(rows)
 
+	stmt = mock.ExpectPrepare("INSERT (.+)")
+	for i, p := range ord.Products {
+		stmt.ExpectExec().WithArgs(i+1, ord.Id, p.Id, p.Quantity, AnyTime{}).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+
 	mock.ExpectCommit()
 
 	repo := &pgRepo{db}

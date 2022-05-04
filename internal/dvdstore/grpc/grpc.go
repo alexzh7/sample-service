@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/alexzh7/sample-service/internal/dvdstore"
+	"github.com/alexzh7/sample-service/internal/models"
 	"github.com/alexzh7/sample-service/proto"
 	"go.uber.org/zap"
 )
@@ -22,26 +23,19 @@ func NewDvdstoreService(uc dvdstore.Usecase, log *zap.SugaredLogger) *dvdstoreSe
 
 // GetCustomers returns list of all Customers limited by provided limit
 func (d *dvdstoreService) GetCustomers(ctx context.Context, req *proto.GetCustomersReq) (*proto.GetCustomersRes, error) {
-	d.log.Infof("Recieved GetCustomers call with limit %v", req.GetLimit())
-
-	// grpc to struct method in models?
+	limit := int(req.GetLimit())
+	d.log.Infof("Recieved GetCustomers call with limit %v", limit)
 
 	// Get customers
-	customers, err := d.uc.GetCustomers(int(req.GetLimit()))
+	customers, err := d.uc.GetCustomers(limit)
 	if err != nil {
 		return nil, grpcError(err)
 	}
 
-	// Customer model to grpc model
+	// Form response
 	customersProto := make([]*proto.Customer, 0)
 	for _, c := range customers {
-		cst := proto.Customer{
-			Id:        int64(c.Id),
-			FirstName: c.FirstName,
-			LastName:  c.LastName,
-			Age:       int64(c.Age),
-		}
-		customersProto = append(customersProto, &cst)
+		customersProto = append(customersProto, c.ToProto())
 	}
 
 	return &proto.GetCustomersRes{CustomerList: customersProto}, nil
@@ -49,56 +43,168 @@ func (d *dvdstoreService) GetCustomers(ctx context.Context, req *proto.GetCustom
 
 // GetCustomer returns Customer by provided id
 func (d *dvdstoreService) GetCustomer(ctx context.Context, req *proto.GetCustomerReq) (*proto.GetCustomerRes, error) {
-	return nil, nil
+	customerId := int(req.GetCustomerID())
+	d.log.Infof("Recieved GetCustomer call with id %v", customerId)
+
+	customer, err := d.uc.GetCustomer(customerId)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &proto.GetCustomerRes{Customer: customer.ToProto()}, nil
 }
 
 // AddCustomer adds passed Customer and returns his id
 func (d *dvdstoreService) AddCustomer(ctx context.Context, req *proto.AddCustomerReq) (*proto.AddCustomerRes, error) {
-	return nil, nil
+	d.log.Info("Recieved AddCustomer call")
+
+	// Map proto.Customer to models.Customer
+	cReq := req.GetCustomer()
+	customer := &models.Customer{
+		Id:        int(cReq.GetId()),
+		FirstName: cReq.GetFirstName(),
+		LastName:  cReq.GetLastName(),
+		Age:       int(cReq.GetAge()),
+	}
+
+	id, err := d.uc.AddCustomer(customer)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &proto.AddCustomerRes{CustomerID: int64(id)}, nil
 }
 
 // DeleteCustomer deletes Customer by provided id
 func (d *dvdstoreService) DeleteCustomer(ctx context.Context, req *proto.DeleteCustomerReq) (*proto.DeleteCustomerRes, error) {
-	return nil, nil
+	customerId := int(req.GetCustomerID())
+	d.log.Infof("Recieved DeleteCustomer call with id %v", customerId)
+
+	if err := d.uc.DeleteCustomer(customerId); err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &proto.DeleteCustomerRes{}, nil
 }
 
 // GetProducts returns list of all Products limited by provided limit
 func (d *dvdstoreService) GetProducts(ctx context.Context, req *proto.GetProductsReq) (*proto.GetProductsRes, error) {
-	return nil, nil
+	limit := int(req.GetLimit())
+	d.log.Infof("Recieved GetProducts call with limit %v", limit)
+
+	// Get products
+	products, err := d.uc.GetProducts(limit)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	// Form response
+	productsRes := make([]*proto.Product, 0)
+	for _, p := range products {
+		productsRes = append(productsRes, p.ToProto())
+	}
+
+	return &proto.GetProductsRes{ProductList: productsRes}, nil
 }
 
 // GetProduct returns Product by provided id
 func (d *dvdstoreService) GetProduct(ctx context.Context, req *proto.GetProductReq) (*proto.GetProductRes, error) {
-	return nil, nil
+	productId := int(req.GetProductID())
+	d.log.Infof("Recieved GetProduct call with id %v", productId)
+
+	product, err := d.uc.GetProduct(productId)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &proto.GetProductRes{Product: product.ToProto()}, nil
 }
 
 // AddProduct adds passed Product and returns his id
 func (d *dvdstoreService) AddProduct(ctx context.Context, req *proto.AddProductReq) (*proto.AddProductRes, error) {
-	return nil, nil
+	d.log.Info("Recieved AddProduct call")
+
+	product := models.ProductFromProto(req.GetProduct())
+	id, err := d.uc.AddProduct(product)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &proto.AddProductRes{ProductID: int64(id)}, nil
 }
 
 // DeleteProduct deletes Product by provided id
 func (d *dvdstoreService) DeleteProduct(ctx context.Context, req *proto.DeleteProductReq) (*proto.DeleteProductRes, error) {
-	return nil, nil
+	productId := int(req.GetProductID())
+	d.log.Infof("Recieved DeleteProduct call with id %v", productId)
+
+	if err := d.uc.DeleteProduct(productId); err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &proto.DeleteProductRes{}, nil
 }
 
 // GetOrder gets order by provided id
 func (d *dvdstoreService) GetOrder(ctx context.Context, req *proto.GetOrderReq) (*proto.GetOrderRes, error) {
-	return nil, nil
+	orderId := int(req.GetOrderID())
+	d.log.Infof("Recieved GetOrder call with id %v", orderId)
+
+	order, err := d.uc.GetOrder(orderId)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &proto.GetOrderRes{Order: order.ToProto()}, nil
 }
 
 // GetCustomerOrders returns customer orders by provided customer id
 func (d *dvdstoreService) GetCustomerOrders(ctx context.Context, req *proto.GetCustomerOrdersReq) (*proto.GetCustomerOrdersRes, error) {
-	return nil, nil
+	customerId := int(req.GetCustomerID())
+	d.log.Infof("Recieved GetCustomerOrders call with id %v", customerId)
+
+	// Get orders
+	orders, err := d.uc.GetCustomerOrders(customerId)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	// Form response
+	protoOrders := make([]*proto.Order, 0)
+	for _, o := range orders {
+		protoOrders = append(protoOrders, o.ToProto())
+	}
+
+	return &proto.GetCustomerOrdersRes{OrderList: protoOrders}, nil
 }
 
 // AddOrder adds order for passed customer id with provided products and returns created order id
 func (d *dvdstoreService) AddOrder(ctx context.Context, req *proto.AddOrderReq) (*proto.AddOrderRes, error) {
-	// AddOrder returns only orderID
-	return nil, nil
+	customerId := int(req.GetCustomerID())
+	d.log.Infof("Recieved AddOrder call for customer id %v", customerId)
+
+	// Form request
+	products := make([]*models.Product, 0)
+	for _, p := range req.GetProductList() {
+		products = append(products, models.ProductFromProto(p))
+	}
+
+	order, err := d.uc.AddOrder(customerId, products)
+	if err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &proto.AddOrderRes{OrderID: int64(order.Id)}, nil
 }
 
 // DeleteOrder deletes order with provided order id
 func (d *dvdstoreService) DeleteOrder(ctx context.Context, req *proto.DeleteOrderReq) (*proto.DeleteOrderRes, error) {
-	return nil, nil
+	orderId := int(req.GetOrderID())
+	d.log.Infof("Recieved DeleteOrder call with id %v", orderId)
+
+	if err := d.uc.DeleteOrder(orderId); err != nil {
+		return nil, grpcError(err)
+	}
+
+	return &proto.DeleteOrderRes{}, nil
 }

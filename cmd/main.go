@@ -20,7 +20,6 @@ import (
 const grpcport = 9090
 
 // TODO: Fix TODOs :)
-// TODO: queries to separate file
 func main() {
 	// Logger
 	l := zap.NewExample().Sugar()

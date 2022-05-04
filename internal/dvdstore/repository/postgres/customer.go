@@ -46,7 +46,7 @@ func (p *pgRepo) GetCustomer(customerId int) (*models.Customer, error) {
 
 // AddCustomer adds a customer returning id
 func (p *pgRepo) AddCustomer(cst *models.Customer) (id int, err error) {
-	if err = p.db.QueryRow(addCustomerQuery, cst.FirstName, cst.LastName, cst.Age).
+	if err = p.db.QueryRow(sqlAddCustomer, cst.FirstName, cst.LastName, cst.Age).
 		Scan(&id); err != nil {
 		return 0, fmt.Errorf("AddCustomer sql.QueryRow: %v", err)
 	}
@@ -61,50 +61,3 @@ func (p *pgRepo) DeleteCustomer(customerId int) error {
 	}
 	return nil
 }
-
-// I use only 3 columns from sample database to simplify the project logic
-const addCustomerQuery = `
-		INSERT INTO customers (
-			firstname,
-			lastname,
-			address1,
-			address2,
-			city,
-			state,
-			zip,
-			country,
-			region,
-			email,
-			phone,
-			creditcardtype,
-			creditcard,
-			creditcardexpiration,
-			username,
-			password,
-			age,
-			income,
-			gender
-		)
-		VALUES (
-			$1,
-			$2,
-			'',
-			'',
-			'',
-			'',
-			-1,
-			'',
-			-1,
-			'',
-			'',
-			-1,
-			'',
-			'',
-			'',
-			'',
-			$3,
-			-1,
-			''
-		)
-		RETURNING customerid
-		`

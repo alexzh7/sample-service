@@ -9,14 +9,7 @@ import (
 
 // GetAllProducts returns slice of all products limited by limit
 func (p *pgRepo) GetAllProducts(limit int) ([]*models.Product, error) {
-	query := `
-	SELECT p.prod_id, p.title, p.price, i.quan_in_stock 
-	FROM products p INNER JOIN inventory i
-	ON p.prod_id = i.prod_id
-	LIMIT $1
-	`
-
-	rows, err := p.db.Query(query, limit)
+	rows, err := p.db.Query(sqlGetAllProducts, limit)
 	if err != nil {
 		return nil, fmt.Errorf("GetAllProducts sql.Query: %v", err)
 	}
@@ -39,15 +32,9 @@ func (p *pgRepo) GetAllProducts(limit int) ([]*models.Product, error) {
 
 // GetProduct returns single product by given id and EntityError if product wasn't found
 func (p *pgRepo) GetProduct(productId int) (*models.Product, error) {
-	query := `
-	SELECT p.prod_id, p.title, p.price, i.quan_in_stock 
-	FROM products p INNER JOIN inventory i
-	ON p.prod_id = i.prod_id
-	WHERE p.prod_id = $1
-	`
 	prod := models.Product{}
 
-	err := p.db.QueryRow(query, productId).
+	err := p.db.QueryRow(sqlGetProduct, productId).
 		Scan(&prod.Id, &prod.Title, &prod.Price, &prod.Quantity)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -65,13 +52,6 @@ func (p *pgRepo) AddProduct(prod *models.Product) (productId int, err error) {
 		return 0, fmt.Errorf("AddProduct "+errSring+": %v", err)
 	}
 
-	// I use only 2 columns from sample database to simplify the project logic
-	productsQuery := `
-	INSERT INTO products (category, title, actor, price, special, common_prod_id)
-	VALUES (-1, $1, '', $2, -1, -1)
-	RETURNING prod_id
-	`
-
 	tx, err := p.db.Begin()
 	if err != nil {
 		return fail("tx.Begin", err)
@@ -79,7 +59,7 @@ func (p *pgRepo) AddProduct(prod *models.Product) (productId int, err error) {
 	defer tx.Rollback()
 
 	// Insert new product
-	if err = tx.QueryRow(productsQuery, prod.Title, prod.Price).Scan(&productId); err != nil {
+	if err = tx.QueryRow(sqlAddProduct, prod.Title, prod.Price).Scan(&productId); err != nil {
 		return fail("tx.Exec on products", err)
 	}
 

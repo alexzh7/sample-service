@@ -239,7 +239,6 @@ func (d *dvdstoreUC) AddOrder(customerId int, products []*models.Product) (*mode
 	}
 
 	// Check if customer exists
-	// TODO: DRY
 	_, err := d.GetCustomer(customerId)
 	var entErr *models.EntityError
 	if err != nil {
