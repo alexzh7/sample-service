@@ -169,7 +169,7 @@ type Order struct {
 	unknownFields protoimpl.UnknownFields
 
 	Id          int64                  `protobuf:"varint,1,opt,name=Id,proto3" json:"Id,omitempty"`
-	Date        *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=Date,proto3" json:"Date,omitempty"` // ??
+	Date        *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=Date,proto3" json:"Date,omitempty"`
 	NetAmount   float64                `protobuf:"fixed64,3,opt,name=NetAmount,proto3" json:"NetAmount,omitempty"`
 	Tax         float64                `protobuf:"fixed64,4,opt,name=Tax,proto3" json:"Tax,omitempty"`
 	TotalAmount float64                `protobuf:"fixed64,5,opt,name=TotalAmount,proto3" json:"TotalAmount,omitempty"`
@@ -443,6 +443,7 @@ func (x *GetCustomerRes) GetCustomer() *Customer {
 }
 
 // AddCustomerReq contains single customer to add
+// Customer "Id" field is ignored
 type AddCustomerReq struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -818,6 +819,7 @@ func (x *GetProductRes) GetProduct() *Product {
 }
 
 // AddProductReq contains product tot add
+// Product "Id" field is ignored
 type AddProductReq struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1192,7 +1194,8 @@ func (x *GetCustomerOrdersRes) GetOrderList() []*Order {
 	return nil
 }
 
-// AddOrderReq contains customer id and list of products to make order
+// AddOrderReq contains customer id and list of products to make order.
+// "Title" and "Price" fields in ProductList are ignored
 type AddOrderReq struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

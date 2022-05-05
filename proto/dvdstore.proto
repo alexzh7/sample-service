@@ -21,7 +21,7 @@ message Product {
 
 message Order {
     int64 Id = 1;
-    google.protobuf.Timestamp Date = 2; // ??
+    google.protobuf.Timestamp Date = 2;
     double NetAmount = 3;
     double Tax = 4;
     double TotalAmount = 5;
@@ -49,6 +49,7 @@ message GetCustomerRes {
 }
 
 // AddCustomerReq contains single customer to add
+// Customer "Id" field is ignored
 message AddCustomerReq {
     Customer Customer = 1;
 }
@@ -88,6 +89,7 @@ message GetProductRes {
 }
 
 // AddProductReq contains product tot add
+// Product "Id" field is ignored
 message AddProductReq {
     Product Product = 1;
 }
@@ -126,7 +128,8 @@ message GetCustomerOrdersRes {
     repeated Order OrderList = 1;
 }
 
-// AddOrderReq contains customer id and list of products to make order
+// AddOrderReq contains customer id and list of products to make order.
+// "Title" and "Price" fields in ProductList are ignored
 message AddOrderReq {
     int64 CustomerID = 1;
     repeated Product ProductList = 2;
@@ -153,9 +156,11 @@ service Dvdstore {
     rpc GetCustomers(GetCustomersReq) returns (GetCustomersRes);
     // GetCustomer returns Customer by provided id
     rpc GetCustomer(GetCustomerReq) returns (GetCustomerRes);
-    // AddCustomer adds passed Customer and returns his id
+    // AddCustomer adds passed Customer and returns his id.
+    // Passed customer "Id" field is ignored
     rpc AddCustomer(AddCustomerReq) returns (AddCustomerRes);
-    // DeleteCustomer deletes Customer by provided id
+    // DeleteCustomer deletes Customer by provided id.
+    // Returns empty response if no errors were met
     rpc DeleteCustomer(DeleteCustomerReq) returns (DeleteCustomerRes);
 
     // GetProducts returns list of all Products limited by provided limit
@@ -163,8 +168,10 @@ service Dvdstore {
     // GetProduct returns Product by provided id
     rpc GetProduct(GetProductReq) returns (GetProductRes);
     // AddProduct adds passed Product and returns his id
+    // Passed product "Id" field is ignored
     rpc AddProduct(AddProductReq) returns (AddProductRes);
-    // DeleteProduct deletes Product by provided id
+    // DeleteProduct deletes Product by provided id.
+    // Returns empty response if no errors were met
     rpc DeleteProduct(DeleteProductReq) returns (DeleteProductRes);
 
     // GetOrder gets order by provided id
@@ -172,8 +179,10 @@ service Dvdstore {
     // GetCustomerOrders returns customer orders by provided customer id
     rpc GetCustomerOrders(GetCustomerOrdersReq) returns (GetCustomerOrdersRes);
     // AddOrder adds order for passed customer id with provided products 
-    // and returns created order id 
+    // and returns created order id. "Title" and "Price" fields in passed 
+    // ProductList are ignored
     rpc AddOrder(AddOrderReq) returns (AddOrderRes);
-    // DeleteOrder deletes order with provided order id
+    // DeleteOrder deletes order with provided order id.
+    // Returns empty response if no errors were met
     rpc DeleteOrder (DeleteOrderReq) returns (DeleteOrderRes);
 }

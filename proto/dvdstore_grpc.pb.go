@@ -26,26 +26,32 @@ type DvdstoreClient interface {
 	GetCustomers(ctx context.Context, in *GetCustomersReq, opts ...grpc.CallOption) (*GetCustomersRes, error)
 	// GetCustomer returns Customer by provided id
 	GetCustomer(ctx context.Context, in *GetCustomerReq, opts ...grpc.CallOption) (*GetCustomerRes, error)
-	// AddCustomer adds passed Customer and returns his id
+	// AddCustomer adds passed Customer and returns his id.
+	// Passed customer "Id" field is ignored
 	AddCustomer(ctx context.Context, in *AddCustomerReq, opts ...grpc.CallOption) (*AddCustomerRes, error)
-	// DeleteCustomer deletes Customer by provided id
+	// DeleteCustomer deletes Customer by provided id.
+	// Returns empty response if no errors were met
 	DeleteCustomer(ctx context.Context, in *DeleteCustomerReq, opts ...grpc.CallOption) (*DeleteCustomerRes, error)
 	// GetProducts returns list of all Products limited by provided limit
 	GetProducts(ctx context.Context, in *GetProductsReq, opts ...grpc.CallOption) (*GetProductsRes, error)
 	// GetProduct returns Product by provided id
 	GetProduct(ctx context.Context, in *GetProductReq, opts ...grpc.CallOption) (*GetProductRes, error)
 	// AddProduct adds passed Product and returns his id
+	// Passed product "Id" field is ignored
 	AddProduct(ctx context.Context, in *AddProductReq, opts ...grpc.CallOption) (*AddProductRes, error)
-	// DeleteProduct deletes Product by provided id
+	// DeleteProduct deletes Product by provided id.
+	// Returns empty response if no errors were met
 	DeleteProduct(ctx context.Context, in *DeleteProductReq, opts ...grpc.CallOption) (*DeleteProductRes, error)
 	// GetOrder gets order by provided id
 	GetOrder(ctx context.Context, in *GetOrderReq, opts ...grpc.CallOption) (*GetOrderRes, error)
 	// GetCustomerOrders returns customer orders by provided customer id
 	GetCustomerOrders(ctx context.Context, in *GetCustomerOrdersReq, opts ...grpc.CallOption) (*GetCustomerOrdersRes, error)
 	// AddOrder adds order for passed customer id with provided products
-	// and returns created order id
+	// and returns created order id. "Title" and "Price" fields in passed
+	// ProductList are ignored
 	AddOrder(ctx context.Context, in *AddOrderReq, opts ...grpc.CallOption) (*AddOrderRes, error)
-	// DeleteOrder deletes order with provided order id
+	// DeleteOrder deletes order with provided order id.
+	// Returns empty response if no errors were met
 	DeleteOrder(ctx context.Context, in *DeleteOrderReq, opts ...grpc.CallOption) (*DeleteOrderRes, error)
 }
 
@@ -173,26 +179,32 @@ type DvdstoreServer interface {
 	GetCustomers(context.Context, *GetCustomersReq) (*GetCustomersRes, error)
 	// GetCustomer returns Customer by provided id
 	GetCustomer(context.Context, *GetCustomerReq) (*GetCustomerRes, error)
-	// AddCustomer adds passed Customer and returns his id
+	// AddCustomer adds passed Customer and returns his id.
+	// Passed customer "Id" field is ignored
 	AddCustomer(context.Context, *AddCustomerReq) (*AddCustomerRes, error)
-	// DeleteCustomer deletes Customer by provided id
+	// DeleteCustomer deletes Customer by provided id.
+	// Returns empty response if no errors were met
 	DeleteCustomer(context.Context, *DeleteCustomerReq) (*DeleteCustomerRes, error)
 	// GetProducts returns list of all Products limited by provided limit
 	GetProducts(context.Context, *GetProductsReq) (*GetProductsRes, error)
 	// GetProduct returns Product by provided id
 	GetProduct(context.Context, *GetProductReq) (*GetProductRes, error)
 	// AddProduct adds passed Product and returns his id
+	// Passed product "Id" field is ignored
 	AddProduct(context.Context, *AddProductReq) (*AddProductRes, error)
-	// DeleteProduct deletes Product by provided id
+	// DeleteProduct deletes Product by provided id.
+	// Returns empty response if no errors were met
 	DeleteProduct(context.Context, *DeleteProductReq) (*DeleteProductRes, error)
 	// GetOrder gets order by provided id
 	GetOrder(context.Context, *GetOrderReq) (*GetOrderRes, error)
 	// GetCustomerOrders returns customer orders by provided customer id
 	GetCustomerOrders(context.Context, *GetCustomerOrdersReq) (*GetCustomerOrdersRes, error)
 	// AddOrder adds order for passed customer id with provided products
-	// and returns created order id
+	// and returns created order id. "Title" and "Price" fields in passed
+	// ProductList are ignored
 	AddOrder(context.Context, *AddOrderReq) (*AddOrderRes, error)
-	// DeleteOrder deletes order with provided order id
+	// DeleteOrder deletes order with provided order id.
+	// Returns empty response if no errors were met
 	DeleteOrder(context.Context, *DeleteOrderReq) (*DeleteOrderRes, error)
 	mustEmbedUnimplementedDvdstoreServer()
 }
