@@ -7,11 +7,14 @@ It has simplified business logic in order to concentrate on architecture, code o
 Project structure (mostly) follows [Standard Go Project Layout](https://github.com/golang-standards/project-layout "Standard Go Project Layout").
 
 - `/cmd` - entry point of the app
+- `/config` - configuration
 - `/internal/dvdstore`  - application code (interfaces, transports, implementations)
 - `/internal/dvdstore/grpc` -  GRPC transport
 - `/internal/dvdstore/repository` - working with repositories, currently only postgresql
 - `/internal/dvdstore/usecase` - business logic
 - `/internal/models` - entities, exported errors, custom validations
+- `/internal/server` - initialization of the app ("continues" main.go)
+- `/pkg/postgres` - postgres connection config
 - `/proto` - protobuf definition and proto-generated code
 
 To follow dependency inversion, use cases and repositories are described through interfaces.  
