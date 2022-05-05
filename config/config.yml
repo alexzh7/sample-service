@@ -1,0 +1,8 @@
+postgres:
+  Host: localhost
+  Port: 5432
+  User: pguser
+  Password: pgpass
+  DBName: dvdstore
+grpc:
+  Port: 9090

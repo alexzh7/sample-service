@@ -11,8 +11,5 @@ type pgRepo struct {
 
 // NewPgRepo is a pgRepo constructor. Returns error if db is unreachable
 func NewPgRepo(db *sql.DB) (*pgRepo, error) {
-	if err := db.Ping(); err != nil {
-		return nil, err
-	}
 	return &pgRepo{db: db}, nil
 }

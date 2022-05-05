@@ -24,7 +24,7 @@ func NewDvdstoreService(uc dvdstore.Usecase, log *zap.SugaredLogger) *dvdstoreSe
 // GetCustomers returns list of all Customers limited by provided limit
 func (d *dvdstoreService) GetCustomers(ctx context.Context, req *proto.GetCustomersReq) (*proto.GetCustomersRes, error) {
 	limit := int(req.GetLimit())
-	d.log.Infof("Recieved GetCustomers call with limit %v", limit)
+	d.log.Infof("Received GetCustomers call with limit %v", limit)
 
 	// Get customers
 	customers, err := d.uc.GetCustomers(limit)
@@ -44,7 +44,7 @@ func (d *dvdstoreService) GetCustomers(ctx context.Context, req *proto.GetCustom
 // GetCustomer returns Customer by provided id
 func (d *dvdstoreService) GetCustomer(ctx context.Context, req *proto.GetCustomerReq) (*proto.GetCustomerRes, error) {
 	customerId := int(req.GetCustomerID())
-	d.log.Infof("Recieved GetCustomer call with id %v", customerId)
+	d.log.Infof("Received GetCustomer call with id %v", customerId)
 
 	customer, err := d.uc.GetCustomer(customerId)
 	if err != nil {
@@ -56,7 +56,7 @@ func (d *dvdstoreService) GetCustomer(ctx context.Context, req *proto.GetCustome
 
 // AddCustomer adds passed Customer and returns his id
 func (d *dvdstoreService) AddCustomer(ctx context.Context, req *proto.AddCustomerReq) (*proto.AddCustomerRes, error) {
-	d.log.Info("Recieved AddCustomer call")
+	d.log.Info("Received AddCustomer call")
 
 	// Map proto.Customer to models.Customer
 	cReq := req.GetCustomer()
@@ -78,7 +78,7 @@ func (d *dvdstoreService) AddCustomer(ctx context.Context, req *proto.AddCustome
 // DeleteCustomer deletes Customer by provided id
 func (d *dvdstoreService) DeleteCustomer(ctx context.Context, req *proto.DeleteCustomerReq) (*proto.DeleteCustomerRes, error) {
 	customerId := int(req.GetCustomerID())
-	d.log.Infof("Recieved DeleteCustomer call with id %v", customerId)
+	d.log.Infof("Received DeleteCustomer call with id %v", customerId)
 
 	if err := d.uc.DeleteCustomer(customerId); err != nil {
 		return nil, grpcError(err)
@@ -90,7 +90,7 @@ func (d *dvdstoreService) DeleteCustomer(ctx context.Context, req *proto.DeleteC
 // GetProducts returns list of all Products limited by provided limit
 func (d *dvdstoreService) GetProducts(ctx context.Context, req *proto.GetProductsReq) (*proto.GetProductsRes, error) {
 	limit := int(req.GetLimit())
-	d.log.Infof("Recieved GetProducts call with limit %v", limit)
+	d.log.Infof("Received GetProducts call with limit %v", limit)
 
 	// Get products
 	products, err := d.uc.GetProducts(limit)
@@ -110,7 +110,7 @@ func (d *dvdstoreService) GetProducts(ctx context.Context, req *proto.GetProduct
 // GetProduct returns Product by provided id
 func (d *dvdstoreService) GetProduct(ctx context.Context, req *proto.GetProductReq) (*proto.GetProductRes, error) {
 	productId := int(req.GetProductID())
-	d.log.Infof("Recieved GetProduct call with id %v", productId)
+	d.log.Infof("Received GetProduct call with id %v", productId)
 
 	product, err := d.uc.GetProduct(productId)
 	if err != nil {
@@ -122,7 +122,7 @@ func (d *dvdstoreService) GetProduct(ctx context.Context, req *proto.GetProductR
 
 // AddProduct adds passed Product and returns his id
 func (d *dvdstoreService) AddProduct(ctx context.Context, req *proto.AddProductReq) (*proto.AddProductRes, error) {
-	d.log.Info("Recieved AddProduct call")
+	d.log.Info("Received AddProduct call")
 
 	product := models.ProductFromProto(req.GetProduct())
 	id, err := d.uc.AddProduct(product)
@@ -136,7 +136,7 @@ func (d *dvdstoreService) AddProduct(ctx context.Context, req *proto.AddProductR
 // DeleteProduct deletes Product by provided id
 func (d *dvdstoreService) DeleteProduct(ctx context.Context, req *proto.DeleteProductReq) (*proto.DeleteProductRes, error) {
 	productId := int(req.GetProductID())
-	d.log.Infof("Recieved DeleteProduct call with id %v", productId)
+	d.log.Infof("Received DeleteProduct call with id %v", productId)
 
 	if err := d.uc.DeleteProduct(productId); err != nil {
 		return nil, grpcError(err)
@@ -148,7 +148,7 @@ func (d *dvdstoreService) DeleteProduct(ctx context.Context, req *proto.DeletePr
 // GetOrder gets order by provided id
 func (d *dvdstoreService) GetOrder(ctx context.Context, req *proto.GetOrderReq) (*proto.GetOrderRes, error) {
 	orderId := int(req.GetOrderID())
-	d.log.Infof("Recieved GetOrder call with id %v", orderId)
+	d.log.Infof("Received GetOrder call with id %v", orderId)
 
 	order, err := d.uc.GetOrder(orderId)
 	if err != nil {
@@ -161,7 +161,7 @@ func (d *dvdstoreService) GetOrder(ctx context.Context, req *proto.GetOrderReq) 
 // GetCustomerOrders returns customer orders by provided customer id
 func (d *dvdstoreService) GetCustomerOrders(ctx context.Context, req *proto.GetCustomerOrdersReq) (*proto.GetCustomerOrdersRes, error) {
 	customerId := int(req.GetCustomerID())
-	d.log.Infof("Recieved GetCustomerOrders call with id %v", customerId)
+	d.log.Infof("Received GetCustomerOrders call with id %v", customerId)
 
 	// Get orders
 	orders, err := d.uc.GetCustomerOrders(customerId)
@@ -181,7 +181,7 @@ func (d *dvdstoreService) GetCustomerOrders(ctx context.Context, req *proto.GetC
 // AddOrder adds order for passed customer id with provided products and returns created order id
 func (d *dvdstoreService) AddOrder(ctx context.Context, req *proto.AddOrderReq) (*proto.AddOrderRes, error) {
 	customerId := int(req.GetCustomerID())
-	d.log.Infof("Recieved AddOrder call for customer id %v", customerId)
+	d.log.Infof("Received AddOrder call for customer id %v", customerId)
 
 	// Form request
 	products := make([]*models.Product, 0)
@@ -200,7 +200,7 @@ func (d *dvdstoreService) AddOrder(ctx context.Context, req *proto.AddOrderReq) 
 // DeleteOrder deletes order with provided order id
 func (d *dvdstoreService) DeleteOrder(ctx context.Context, req *proto.DeleteOrderReq) (*proto.DeleteOrderRes, error) {
 	orderId := int(req.GetOrderID())
-	d.log.Infof("Recieved DeleteOrder call with id %v", orderId)
+	d.log.Infof("Received DeleteOrder call with id %v", orderId)
 
 	if err := d.uc.DeleteOrder(orderId); err != nil {
 		return nil, grpcError(err)
